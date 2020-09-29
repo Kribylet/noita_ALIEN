@@ -1,0 +1,8 @@
+	<Mod
+		name="YOUR_MOD_NAME_HERE"
+		description="YOUR_MOD_DESCRIPTION_HERE"
+		tags="gameplay,quality of life,perks,tweaks"
+		dont_upload_folders=".vscode|.git|workshop_images"
+		dont_upload_files="README.md|.gitignore"
+	> 
+	</Mod>

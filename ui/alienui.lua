@@ -50,7 +50,7 @@ local perkFrame = function()
 
     if GuiButton(ALIEN_gui, 185, 44, "Gimme nuggies", 3030) then
         local x, y = EntityGetTransform(get_players()[1])
-		EntityLoad("data/entities/items/pickup/goldnugget_10000.xml", x, y)
+        EntityLoad("data/entities/items/pickup/goldnugget_10000.xml", x, y)
     end
 
     local storeBtnPos = start_btn_id

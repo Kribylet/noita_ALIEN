@@ -2,6 +2,9 @@ dofile_once("data/scripts/lib/utilities.lua")
 dofile_once("data/scripts/perks/perk_list.lua")
 dofile_once("data/scripts/perks/perk.lua")
 
+-- SetRandomSeed once
+SetRandomSeed(41515166, 12310915)
+
 -- LUA Utilities
 
 function ArrayHasValue(array, value)
@@ -103,14 +106,7 @@ function GetLevelUpCostAt(level)
     end
 end
 
-function GetLevelUpCost()
-
-    local level = GetPlayerLevel()
-    return GetLevelUpCostAt(level)
-end
-
-function SetLevelUpCost(level, newLevelUpCost)
-
+function RemoveStoredLevelUpCost(level)
     local player_entity = get_players()[1]
 
     local levelupCostComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent",
@@ -119,6 +115,19 @@ function SetLevelUpCost(level, newLevelUpCost)
     if (levelupCostComponent ~= nil) then
         EntityRemoveComponent(player_entity, levelupCostComponent)
     end
+end
+
+function GetLevelUpCost()
+
+    local level = GetPlayerLevel()
+    return GetLevelUpCostAt(level)
+end
+
+function SetLevelUpCost(level, newLevelUpCost)
+
+    RemoveStoredLevelUpCost(level)
+
+    local player_entity = get_players()[1]
 
     EntityAddComponent(player_entity, "VariableStorageComponent", {
         _tags = "var_level_cost_" .. level,
@@ -166,14 +175,10 @@ function RemoveAllAvailablePerks()
 
     local components = EntityGetComponent(player_entity, "VariableStorageComponent", ALIEN_PERK_TAG)
 
-    if (components == nil or #components == 0) then
-        do
-            return false
+    if (components ~= nil and #components ~= 0) then
+        for _, comp in pairs(components) do
+            EntityRemoveComponent(player_entity, comp)
         end
-    end
-
-    for _, comp in pairs(components) do
-        EntityRemoveComponent(player_entity, comp)
     end
 
     RemovePerkRerollCost()
@@ -484,6 +489,16 @@ function GetNextFreePerkSetIndex()
     return nil
 end
 
+local doStorePerkSet = function(player_entity, perkIDList, rerollCost, biomeName, perkStoreIndex)
+    for _, perk_id in pairs(perkIDList) do
+        StorePerkSetPerk(player_entity, perk_id, perkStoreIndex)
+    end
+
+    StorePerkSetRerollCost(player_entity, rerollCost, perkStoreIndex)
+    StorePerkSetBiome(player_entity, biomeName, perkStoreIndex)
+    stored_perk_sets = stored_perk_sets + 1
+end
+
 function StorePerkSet()
 
     if (GetAvailablePerkNum() == 0) then
@@ -508,12 +523,7 @@ function StorePerkSet()
 
     local nextFreePerkSetIndex = GetNextFreePerkSetIndex()
 
-    for _, perk_id in pairs(perkIDList) do
-        StorePerkSetPerk(player_entity, perk_id, nextFreePerkSetIndex)
-    end
-
-    StorePerkSetRerollCost(player_entity, rerollCost, nextFreePerkSetIndex)
-    StorePerkSetBiome(player_entity, biomeName, nextFreePerkSetIndex)
+    doStorePerkSet(player_entity, perkIDList, rerollCost, biomeName, nextFreePerkSetIndex)
 
     RemoveAllAvailablePerks()
 
@@ -521,7 +531,6 @@ function StorePerkSet()
         PerformLevelUp()
     end
 
-    stored_perk_sets = stored_perk_sets + 1
 end
 
 function ApplyStoredPerkSet(perk_id_list, reroll_cost)
@@ -558,12 +567,12 @@ function SwitchToPerkSet(i)
 
     -- Store the current set in the old index
 
-    for _, perk_id in pairs(current_perk_id_list) do
-        StorePerkSetPerk(player_entity, perk_id, i)
-    end
 
-    StorePerkSetRerollCost(player_entity, current_perk_reroll_cost, i)
-    StorePerkSetBiome(player_entity, current_biome, i)
+    doStorePerkSet(player_entity,
+                   current_perk_id_list,
+                   current_perk_reroll_cost,
+                   current_biome,
+                   i)
 
     RemoveAllAvailablePerks()
 
@@ -659,11 +668,89 @@ local get_perk_flag_name = function(perk_id)
     return "PERK_" .. perk_id
 end
 
+ -- this generates global perk spawn order for current world seed
+ -- This function should not call setRandomSeed; that resets the distribution generation so that
+ -- the same sequence of numbers are generated for everything after it
+ --
+ -- With the original implementation, Perk Lottery always gave the same success/fail sequences
+ -- during perk selection, because the original perk selection method relied on resetting the seed
+ -- again based on the unique x,y positions of the perk entities, which can't be done for ALIEN
+ local fixed_perk_get_spawn_order = function()
+	-- this function should return the same results no matter when or where during a run it is called.
+	-- this function should have no side effects.
+	local MIN_DISTANCE_BETWEEN_DUPLICATE_PERKS = 4
+	local PERK_SPAWN_ORDER_LENGTH = 100
+	local PERK_DUPLICATE_AVOIDANCE_TRIES = 200
+
+	local create_perk_pool = function()
+		local result = {}
+
+		for i,perk_data in ipairs(perk_list) do
+			if ( perk_data.not_in_default_perk_pool == nil or perk_data.not_in_default_perk_pool == false ) then
+				table.insert( result, perk_data )
+			end
+		end
+
+		return result
+	end
+
+	local perk_pool = create_perk_pool()
+
+	local result = { }
+
+	for i=1,PERK_SPAWN_ORDER_LENGTH do
+		local tries = 0
+		local perk_data = nil
+
+		while tries < PERK_DUPLICATE_AVOIDANCE_TRIES do
+			local ok = true
+			if #perk_pool == 0 then
+				perk_pool = create_perk_pool()
+			end
+
+			local index_in_perk_pool = Random( 1, #perk_pool )
+			perk_data = perk_pool[index_in_perk_pool]
+
+			if perk_is_stackable( perk_data ) then --  ensure stackable perks are not spawned too close to each other
+				for ri= #result-MIN_DISTANCE_BETWEEN_DUPLICATE_PERKS,#result do
+					if ri >= 1 and result[ri] == perk_data.id then
+						ok = false
+						break
+					end
+				end
+			else
+				table.remove( perk_pool, index_in_perk_pool ) -- remove non-stackable perks from the pool
+			end
+
+			if ok then
+				break
+			end
+
+			tries = tries + 1
+		end
+
+		table.insert( result, perk_data.id )
+	end
+
+	-- shift the results a x number forward
+	local new_start_i = Random( 10, 20 )
+	local real_result = {}
+	for i=1,PERK_SPAWN_ORDER_LENGTH do
+		real_result[i] = result[ new_start_i ]
+		new_start_i = new_start_i + 1
+		if( new_start_i > #result ) then
+			new_start_i = 1
+		end
+	end
+
+	return real_result
+end
+
 function GeneratePerkList(perk_count)
 
     -- All available perks should have been removed already
 
-    local perks = perk_get_spawn_order()
+    local perks = fixed_perk_get_spawn_order()
 
     for i = 1, perk_count do
         local next_perk_index = tonumber(GlobalsGetValue("TEMPLE_NEXT_PERK_INDEX", "1"))
@@ -699,6 +786,8 @@ local doPerformLevelUp = function()
     SetPlayerXP(GetPlayerXP() - GetLevelUpCost())
 
     SetPlayerLevel(player_level)
+
+    RemoveStoredLevelUpCost(player_level - 1) -- Clean up unused VariableStorageComponent to reduce tag usage
 
     return player_level
 end
@@ -803,7 +892,9 @@ local performPerkRemoval = function(perk_id)
 
     if kill_other_perks then
         local perk_destroy_chance = tonumber(GlobalsGetValue("TEMPLE_PERK_DESTROY_CHANCE", "100"))
-        SetRandomSeed(GameGetFrameNum() * GetAvailablePerkNum(), (x + y) * GetAvailablePerkNum())
+
+        -- Do not repeatedly set randomseed
+        -- SetRandomSeed(GameGetFrameNum() * GetAvailablePerkNum(), (x + y) * GetAvailablePerkNum())
 
         if (Random(1, 100) <= perk_destroy_chance) then
             RemoveAllAvailablePerks()

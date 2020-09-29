@@ -655,6 +655,8 @@ function AddPerkToPlayer(perk_data)
     })
     EntityAddChild(player_entity, entity_ui)
 
+    if (perk_data.id == "EXTRA_PERK") then perk_desc = "From now on, you will get offered an extra perk when you level up." end
+
     GamePrintImportant(GameTextGet("$log_pickedup_perk", GameTextGetTranslatedOrNot(perk_name)), perk_desc)
 end
 

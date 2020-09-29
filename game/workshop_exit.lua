@@ -8,7 +8,6 @@ function collision_trigger()
     _collision_trigger()
 
     timesVisitedTemple = timesVisitedTemple + 1
-    GamePrint("Times visited temple: " .. timesVisitedTemple)
     if (GetPlayerLevel() < (timesVisitedTemple + 1)) then
         PerformCostlyLevelUp()
     end

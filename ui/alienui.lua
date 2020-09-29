@@ -3,7 +3,7 @@ dofile_once("data/scripts/lib/utilities.lua")
 dofile_once("mods/ALIEN/scripts/alien_utils.lua")
 
 local ALIEN_gui = GuiCreate()
-local showUI = true
+local show_alien_UI = true
 local togglerMenuString = "ALIEN"
 
 local toggler = function(showUI)
@@ -25,11 +25,11 @@ local level_up_cost_str = "0"
 
 local perkFrame = function()
 
-    if GuiButton(ALIEN_gui, 185, 54, toggler(showUI) .. togglerMenuString, 3030) then
-        showUI = not showUI
+    if GuiButton(ALIEN_gui, 185, 54, toggler(show_alien_UI) .. togglerMenuString, 3030) then
+        show_alien_UI = not show_alien_UI
     end
 
-    if (not showUI) then
+    if (not show_alien_UI) then
         do
             return false
         end
@@ -47,11 +47,6 @@ local perkFrame = function()
     GuiText(ALIEN_gui, 0, 0, "XP : " .. current_xp .. " / " .. level_up_cost_str)
     GuiText(ALIEN_gui, 0, 0, "Level : " .. current_level)
     GuiLayoutEnd(ALIEN_gui)
-
-    if GuiButton(ALIEN_gui, 185, 44, "Gimme nuggies", 3030) then
-        local x, y = EntityGetTransform(get_players()[1])
-        EntityLoad("data/entities/items/pickup/goldnugget_10000.xml", x, y)
-    end
 
     local storeBtnPos = start_btn_id
     local refreshPerkList = false

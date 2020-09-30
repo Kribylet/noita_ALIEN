@@ -1,16 +1,8 @@
 <Entity tags="teleportable_NOT">
 	<UIInfoComponent
-		name="ThisIstheUIInfoComponent"
+		name="Divine Tablet"
 		>
 	</UIInfoComponent>
-
-	<ItemComponent
-		item_name="Divine Tablet"
-		play_spinning_animation="0"
-   		play_pick_sound="0"
-   		stats_count_as_item_pick_up="0"
-		auto_pickup="0" >
-	</ItemComponent>
 	
 	<VelocityComponent />
 

@@ -5,13 +5,22 @@ dofile_once("mods/ALIEN/scripts/alien_utils.lua")
 local ALIEN_gui = GuiCreate()
 local show_alien_UI = true
 local togglerMenuString = "ALIEN"
+local use_alt_res = UseAlternateResolution()
 
-local toggler = function(showUI)
+local toggler = function(toggle)
     local toggleString = "[-] "
-    if (not showUI) then
+    if (not toggle) then
         toggleString = "[+] "
     end
     return toggleString
+end
+
+function GuiLayoutCoordinates()
+    if (not use_alt_res) then
+        return 27, 18
+    else
+        return 22, 14
+    end
 end
 
 local start_btn_id = 2929
@@ -46,7 +55,9 @@ local perkFrame = function()
     end
     local current_xp = math.min(GetPlayerXP(), level_up_cost);
 
-    GuiLayoutBeginVertical(ALIEN_gui, 27, 18)
+    Gui_X, Gui_Y = GuiLayoutCoordinates(use_alt_res)
+
+    GuiLayoutBeginVertical(ALIEN_gui, Gui_X, Gui_Y)
     GuiText(ALIEN_gui, 0, 0, "XP : " .. current_xp .. " / " .. level_up_cost_str)
     GuiText(ALIEN_gui, 0, 0, "Level : " .. current_level)
     GuiLayoutEnd(ALIEN_gui)
@@ -65,7 +76,11 @@ local perkFrame = function()
 
             for i, perkData in ipairs(perkDataList) do
 
-                if (DrawPerkButton(ALIEN_gui, GetPerkButtonX(), GetPerkButtonY(i), perkData, start_btn_id + 1)) then
+                if (DrawPerkButton(ALIEN_gui, 
+                                   GetPerkButtonX(),
+                                   GetPerkButtonY(i),
+                                   perkData,
+                                   start_btn_id + 1)) then
                     SelectPerk(perkData)
                     refreshPerkList = true
                 end

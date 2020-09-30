@@ -154,6 +154,28 @@ local perk_button_x_anchor = 300
 local perk_button_y_anchor = 44
 local perk_button_y_walk = 10
 
+local perk_icon_offset_multiplier = 2
+
+function UseAlternateResolution()
+    local player_entity = get_players()[1]
+    
+    local alternateResComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent", "alienalternateresolution")
+    if (alternateResComponent ~= nil) then EntityRemoveComponent(player_entity, alternateResComponent) end
+
+    EntityLoadToEntity("mods/ALIEN/ui/resolution.xml", player_entity)
+
+    alternateResComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent", "alienalternateresolution")
+
+    local value = ComponentGetValue2(alternateResComponent, "value_int")
+    if (value == nil) then GamePrint("eh") do return end end
+    GamePrint(value)
+    return value ~= 0
+end
+
+if (UseAlternateResolution()) then
+    perk_icon_offset_multiplier = 1.59
+end
+
 function GetPerkButtonX()
     return perk_button_x_anchor
 end
@@ -191,8 +213,9 @@ function AddUIPerkIcon(perk_data, x, y)
         update_transform_rotation = "0",
         z_index = "0",
     })
-    EntityAddChild(GetUIParent(), ui_perk_icon_entity)
     EntitySetTransform(ui_perk_icon_entity, x, y)
+
+    return ui_perk_icon_entity
 end
 
 function GetPerkIconName(perk_id)
@@ -213,7 +236,15 @@ function SetPerkIconsVisible(shouldBeVisible)
     for i, perk_id in ipairs(perk_id_list) do
         local icon_entity = EntityGetWithName(GetPerkIconName(perk_id))
 
-        EntitySetTransform(icon_entity, GetPerkButtonX()*2 + visibilityOffset, GetPerkButtonY(i)*2 + visibilityOffset)
+        if (EntityGetName(icon_entity) == nil) then
+            icon_entity = AddUIPerkIcon(get_perk_with_id(perk_list, perk_id),
+                                        GetPerkButtonX()*perk_icon_offset_multiplier,
+                                        GetPerkButtonY(i)*perk_icon_offset_multiplier)
+        end
+
+        EntitySetTransform(icon_entity,
+                           GetPerkButtonX()*perk_icon_offset_multiplier + visibilityOffset,
+                           GetPerkButtonY(i)*perk_icon_offset_multiplier + visibilityOffset)
     end
 end
 
@@ -852,8 +883,6 @@ function GeneratePerkList(perk_count)
         GameAddFlagRun(get_perk_flag_name(perk_id))
 
         StoreAvailablePerkID(perk_id)
-
-        AddUIPerkIcon(get_perk_with_id(perk_list, perk_id), GetPerkButtonX()*2, GetPerkButtonY(i)*2)
     end
 
     StorePerkRerollCost()

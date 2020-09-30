@@ -40,11 +40,15 @@ function OnPlayerSpawned(player_entity) -- This runs when player entity has been
         value_int = high_level_cost_growth
     })
 
+    EntityAddComponent(player_entity, "VariableStorageComponent", {
+        _tags = "var_times_visited_temple",
+        value_int = 0
+    })
+
     EntityLoad("mods/ALIEN/ui/alienui.xml")
 end
 ModLuaFileAppend("data/scripts/items/gold_pickup.lua", "mods/ALIEN/game/gold_pickup.lua")
 ModLuaFileAppend("data/scripts/perks/perk.lua", "mods/ALIEN/game/perk.lua")
-ModLuaFileAppend("data/scripts/buildings/workshop_exit.lua", "mods/ALIEN/game/workshop_exit.lua")
 ModLuaFileAppend("data/scripts/biomes/temple_altar.lua", "mods/ALIEN/game/temple_altar.lua")
 ModLuaFileAppend("data/scripts/biomes/temple_altar_right.lua", "mods/ALIEN/game/temple_altar_right.lua")
 ModLuaFileAppend("data/scripts/biomes/temple_altar_left.lua", "mods/ALIEN/game/temple_altar_left.lua")

@@ -13,7 +13,7 @@ If you would like to rush, you will still get a level up and perk when the templ
 
 You can store sets of perks if you'd like to reroll them later, similar to leaving a perk set in a holy mountain. Stored perks are saved in the biome you are in, so you'll have to go back to that biome to be able to access those perks again. If you store a set of perks with a cheaper reroll cost than you have later, that cheaper reroll cost will apply for the stored perk set just like in the base game."
 		tags="gameplay,quality of life,perks,tweaks"
-		dont_upload_folders=".vscode|.git|workshop_images"
+		dont_upload_folders=".vscode|.git|workshop_images|stash"
 		dont_upload_files="README.md|.gitignore"
 	> 
 	</Mod>

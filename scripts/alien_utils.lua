@@ -54,6 +54,18 @@ function SetPlayerXP(new_value)
         "value_int", new_value)
 end
 
+function SetTimesVisitedTemple(new_value)
+
+    ComponentSetValue2(EntityGetFirstComponent(get_players()[1], "VariableStorageComponent", "var_times_visited_temple"),
+        "value_int", new_value)
+end
+
+function GetTimesVisitedTemple()
+
+    return ComponentGetValue2(EntityGetFirstComponent(get_players()[1], "VariableStorageComponent", "var_times_visited_temple"),
+               "value_int")
+end
+
 function AddPlayerXP(value)
 
     local player_xp = EntityGetFirstComponent(get_players()[1], "VariableStorageComponent", "var_player_xp")
@@ -789,17 +801,28 @@ local doPerformLevelUp = function()
     return player_level
 end
 
+function RenderLevelUpAnimation()
+
+    local player_entity = get_players()[1]
+
+    local x,y = EntityGetTransform(player_entity)
+
+    EntityLoad("mods/ALIEN/image_emitters/level_up_effect.xml", x, y)
+end
+
 function PerformLevelUp()
 
     local player_level = doPerformLevelUp()
+
+    local x,y = EntityGetTransform(get_players()[1])
+    RenderLevelUpAnimation()
+    -- EntityLoad("mods/ALIEN/image_emitters/level_up_effect.xml", x, y+8)
 
     GamePrintImportant("Level Up!", "You're now level " .. player_level .. "!")
 
 end
 
-function PerformCostlyLevelUp()
-
-    -- local current_level = doPerformLevelUp()
+local doTabletLevelUp = function()
     local current_level = GetPlayerLevel()
 
     local nextLevelUpCost = GetLevelUpCostAt(current_level) + GetLevelUpCostAt(current_level + 1)
@@ -807,10 +830,24 @@ function PerformCostlyLevelUp()
     SetLevelUpCost(current_level, 0)
 
     if (PlayerShouldLevelUp()) then
-        doPerformLevelUp()
+        PerformLevelUp()
+    end
+end
+
+function PerformDivineTabletEffect()
+
+    local timesVisitedTemple = GetTimesVisitedTemple()
+
+    timesVisitedTemple = timesVisitedTemple + 1
+    if (GetPlayerLevel() < (timesVisitedTemple + 1)) then
+        GamePrintImportant("Divine Tablet", "The gods grant you power above wisdom.")
+        doTabletLevelUp()
+    else
+        GamePrintImportant("Divine Tablet", "The gods are silent.")
     end
 
-    GamePrintImportant("Divine Level Up!", "But you carry your inexperience with you.")
+    SetTimesVisitedTemple(timesVisitedTemple)
+
 end
 
 function GetAvailablePerkIDs()

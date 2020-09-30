@@ -5,11 +5,11 @@
 **This mod is a work in progress and there may be bugs**
       **If you find any bugs please report them!**
 
-*Update: Added Divine Tablet in the perk area so you now get rush perks before the collapse trigger. Also added an animation for when you level up. 
+*Update: Fixed a bug where Divine Tablets would not give a level up when it should. Added perk icons in the GUI.
                     
 I made this mod primarily to not have to chase parallel worlds to power up in the endgame, since that bloats your savegame and can lead to crashes. The point of the mod is not to make you overpowered, but I still need to tweak the experience costs for the levels. Right now they're just guesses from me.
 
-Selecting perks is done through the inventory when the Alien GUI is open. I couldn't find a way to render the perk icons in the GUI yet, unfortunately. You can reroll perks through the UI, which works the same as unmodded rerolling.
+Selecting perks is done through the inventory when the Alien GUI is open. You can reroll perks through the UI, which works the same as unmodded rerolling.
 
 If you would like to rush, you will still get a level up and perk when you enter the perk area. This only happens if you haven't gotten the normal amount of perks for that holy mountain already, so you shouldn't be getting more perks than normal. The XP cost of the level you skipped this way is added to your next level requirement, so you still have to earn that XP to keep levelling later.
 

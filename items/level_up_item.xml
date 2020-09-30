@@ -22,7 +22,7 @@
   <CollisionTriggerComponent
     	width="80"
     	height="80"
-    	radius="40"
+    	radius="60"
 		required_tag="player_unit"
 		destroy_this_entity_when_triggered="0"
 		remove_component_when_triggered="1"

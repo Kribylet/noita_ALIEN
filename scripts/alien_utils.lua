@@ -3,6 +3,7 @@ dofile_once("data/scripts/perks/perk_list.lua")
 dofile_once("data/scripts/perks/perk.lua")
 
 -- SetRandomSeed once
+
 SetRandomSeed(41515166, 12310915)
 
 -- LUA Utilities
@@ -149,10 +150,85 @@ end
 
 -- Define UI specific utilities
 
+local perk_button_x_anchor = 300
+local perk_button_y_anchor = 44
+local perk_button_y_walk = 10
+
+function GetPerkButtonX()
+    return perk_button_x_anchor
+end
+
+function GetPerkButtonY(i)
+    return perk_button_y_anchor + perk_button_y_walk * i
+end
+
+local ui_parent = nil
+
+function GetUIParent()
+
+    if (ui_parent == nil) then
+        local o = EntityLoad("mods/ALIEN/UI/perkicon.xml", 15,15)
+        ui_parent =  EntityGetParent(o)
+        EntityKill(o)
+    end
+
+    return ui_parent
+end
+
+function AddUIPerkIcon(perk_data, x, y)
+
+    local ui_perk_icon_entity = EntityCreateNew(GetPerkIconName(perk_data.id))
+
+    EntityAddComponent(ui_perk_icon_entity, "SpriteComponent",
+    {
+        image_file = perk_data.perk_icon,
+        ui_is_parent = "1",
+        alpha = "1",
+        visible = "1",
+        offset_x = "18",
+        offset_y = "-2",
+        update_transform = "1",
+        update_transform_rotation = "0",
+        z_index = "0",
+    })
+    EntityAddChild(GetUIParent(), ui_perk_icon_entity)
+    EntitySetTransform(ui_perk_icon_entity, x, y)
+end
+
+function GetPerkIconName(perk_id)
+    return perk_id.."_ICON"
+end
+
+
+function SetPerkIconsVisible(shouldBeVisible)
+
+    local perk_id_list = GetAvailablePerkIDs()
+
+    if (perk_id_list == nil) then do return end end
+
+    local visibilityOffset = 1000
+
+    if (shouldBeVisible) then visibilityOffset = 0 end
+
+    for i, perk_id in ipairs(perk_id_list) do
+        local icon_entity = EntityGetWithName(GetPerkIconName(perk_id))
+
+        EntitySetTransform(icon_entity, GetPerkButtonX()*2 + visibilityOffset, GetPerkButtonY(i)*2 + visibilityOffset)
+    end
+end
+
+function RemoveUIPerkIcon(perk_id)
+    EntityKill(EntityGetWithName( GetPerkIconName(perk_id) ))
+end
+
 function InventoryIsOpen()
     local iGui = EntityGetFirstComponent(get_players()[1], "InventoryGuiComponent")
 
     return (iGui ~= nil and ComponentGetValue2(iGui, "mActive") ~= nil and ComponentGetValueBool(iGui, "mActive"))
+end
+
+function DrawPerkButton(gui, x, y, perkData, btn_id)
+    return GuiButton(gui, x, y, perkData.ui_name, btn_id)
 end
 
 -- Define Perk utilities
@@ -189,6 +265,7 @@ function RemoveAllAvailablePerks()
 
     if (components ~= nil and #components ~= 0) then
         for _, comp in pairs(components) do
+            RemoveUIPerkIcon(ComponentGetValue(comp, "value_string"))
             EntityRemoveComponent(player_entity, comp)
         end
     end
@@ -227,6 +304,7 @@ function RemoveAvailablePerkID(perk_id)
         end
     end
 
+    RemoveUIPerkIcon(ComponentGetValue(matchedComponent, "value_string"))
     EntityRemoveComponent(player_entity, matchedComponent)
 
     return true
@@ -374,7 +452,7 @@ function GetStoredPerkSet(i)
     if (perkComponents == nil) then
         do
             return nil
-        end
+        end 
     end
 
     local perkIDList = {}
@@ -774,6 +852,8 @@ function GeneratePerkList(perk_count)
         GameAddFlagRun(get_perk_flag_name(perk_id))
 
         StoreAvailablePerkID(perk_id)
+
+        AddUIPerkIcon(get_perk_with_id(perk_list, perk_id), GetPerkButtonX()*2, GetPerkButtonY(i)*2)
     end
 
     StorePerkRerollCost()

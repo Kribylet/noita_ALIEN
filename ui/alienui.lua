@@ -25,15 +25,18 @@ local level_up_cost_str = "0"
 
 local perkFrame = function()
 
-    if GuiButton(ALIEN_gui, 185, 54, toggler(show_alien_UI) .. togglerMenuString, 3030) then
+    if GuiButton(ALIEN_gui, 172, 54, toggler(show_alien_UI) .. togglerMenuString, 3030) then
         show_alien_UI = not show_alien_UI
     end
 
     if (not show_alien_UI) then
         do
+            SetPerkIconsVisible(false)
             return false
         end
     end
+
+    SetPerkIconsVisible(true)
 
     local current_level = GetPlayerLevel();
     if (current_level ~= prev_level) then
@@ -43,7 +46,7 @@ local perkFrame = function()
     end
     local current_xp = math.min(GetPlayerXP(), level_up_cost);
 
-    GuiLayoutBeginVertical(ALIEN_gui, 29, 18)
+    GuiLayoutBeginVertical(ALIEN_gui, 27, 18)
     GuiText(ALIEN_gui, 0, 0, "XP : " .. current_xp .. " / " .. level_up_cost_str)
     GuiText(ALIEN_gui, 0, 0, "Level : " .. current_level)
     GuiLayoutEnd(ALIEN_gui)
@@ -61,7 +64,8 @@ local perkFrame = function()
             local perkRerollCost = GetPerkRerollCost()
 
             for i, perkData in ipairs(perkDataList) do
-                if GuiButton(ALIEN_gui, 300, 44 + 10 * i, perkData.ui_name, start_btn_id + i) then
+
+                if (DrawPerkButton(ALIEN_gui, GetPerkButtonX(), GetPerkButtonY(i), perkData, start_btn_id + 1)) then
                     SelectPerk(perkData)
                     refreshPerkList = true
                 end
@@ -130,6 +134,7 @@ end
 
 async_loop(function()
     if not InventoryIsOpen() or GameHasFlagRun("ending_game_completed") or not get_players() then
+        SetPerkIconsVisible(false)
         wait(10)
         do
             return

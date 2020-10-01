@@ -5,7 +5,11 @@
 **This mod is a work in progress and there may be bugs**
       **If you find any bugs please report them!**
 
-*Update: Fixed a bug where Divine Tablets would not give a level up when it should. Added perk icons in the GUI.
+*Update: Fixed a bug where Divine Tablets wouldn't give a level if the game had been saved and continued.
+
+*Update: Fixed a bug where perk icons wouldn't render after continuing from an earlier save. Added an alternate resolution setting to fix the UI for some resolutions.
+
+* If your UI looks messed up, go into the mod folder and change resolution.xml (../Noita/mods/ALIEN/ui/resolution.xml) so that it reads 'value_int = 1'. This requires a restart.
 
 *I have heard that there might be mod compatibility issues that cause the Divine Tablet not to spawn. If you notice this problem, please send me a list of the mods you're using.
                     

@@ -93,12 +93,17 @@ function GetGoldValue(entity_item)
     return nil
 end
 
+local levelCostTag = "var_level_cost_"
+
+function GetLevelCostTag(i)
+    return levelCostTag .. i
+end
+
 function GetLevelUpCostAt(level)
 
     local player_entity = get_players()[1]
 
-    local levelupCostComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent",
-                                     "var_level_cost_" .. level)
+    local levelupCostComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent", GetLevelCostTag(level))
 
     if (levelupCostComponent ~= nil) then
         return ComponentGetValue2(levelupCostComponent, "value_int")
@@ -122,8 +127,7 @@ end
 function RemoveStoredLevelUpCost(level)
     local player_entity = get_players()[1]
 
-    local levelupCostComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent",
-                                     "var_level_cost_" .. level)
+    local levelupCostComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent", GetLevelCostTag(level))
 
     if (levelupCostComponent ~= nil) then
         EntityRemoveComponent(player_entity, levelupCostComponent)
@@ -143,7 +147,7 @@ function SetLevelUpCost(level, newLevelUpCost)
     local player_entity = get_players()[1]
 
     EntityAddComponent(player_entity, "VariableStorageComponent", {
-        _tags = "var_level_cost_" .. level,
+        _tags = GetLevelCostTag(level),
         value_int = newLevelUpCost
     })
 end
@@ -167,8 +171,6 @@ function UseAlternateResolution()
     alternateResComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent", "alienalternateresolution")
 
     local value = ComponentGetValue2(alternateResComponent, "value_int")
-    if (value == nil) then GamePrint("eh") do return end end
-    GamePrint(value)
     return value ~= 0
 end
 
@@ -923,7 +925,6 @@ function PerformLevelUp()
 
     local player_level = doPerformLevelUp()
 
-    local x,y = EntityGetTransform(get_players()[1])
     RenderLevelUpAnimation()
     -- EntityLoad("mods/ALIEN/image_emitters/level_up_effect.xml", x, y+8)
 

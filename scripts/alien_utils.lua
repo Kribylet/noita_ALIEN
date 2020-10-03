@@ -544,8 +544,6 @@ local doRemovePerkSet = function(player_entity, i)
     end
 end
 
-local stored_perk_sets = 0
-
 function RemoveStoredPerkSet(i)
 
     if (not ArrayHasValue(GetStoredPerkSetIndices(), i)) then
@@ -558,14 +556,18 @@ function RemoveStoredPerkSet(i)
 
     doRemovePerkSet(player_entity, i)
 
-    stored_perk_sets = stored_perk_sets - 1
-
     return true
 end
 
 function GetStoredPerkSetNum()
 
-    return stored_perk_sets
+    local count = 0
+    for i = 1, PerkStorageLimit do
+        local storedPerkSet = GetStoredPerkSet(i)
+        if (storedPerkSet) then count = count + 1 end
+    end
+
+    return count
 end
 
 local PerkStorageLimit = 6
@@ -573,12 +575,6 @@ local PerkStorageLimit = 6
 function GetStoredPerkSetIndices()
 
     local indices = {}
-
-    if (stored_perk_sets == 0) then
-        do
-            return indices
-        end
-    end
 
     for i = 1, PerkStorageLimit do
         local storedPerkSet = GetStoredPerkSet(i)
@@ -619,7 +615,6 @@ local doStorePerkSet = function(player_entity, perkIDList, rerollCost, biomeName
 
     StorePerkSetRerollCost(player_entity, rerollCost, perkStoreIndex)
     StorePerkSetBiome(player_entity, biomeName, perkStoreIndex)
-    stored_perk_sets = stored_perk_sets + 1
 end
 
 function StorePerkSet()

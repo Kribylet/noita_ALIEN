@@ -559,6 +559,8 @@ function RemoveStoredPerkSet(i)
     return true
 end
 
+local PerkStorageLimit = 6
+
 function GetStoredPerkSetNum()
 
     local count = 0
@@ -569,8 +571,6 @@ function GetStoredPerkSetNum()
 
     return count
 end
-
-local PerkStorageLimit = 6
 
 function GetStoredPerkSetIndices()
 

@@ -75,12 +75,7 @@ local perkFrame = function()
             local perkRerollCost = GetPerkRerollCost()
 
             for i, perkData in ipairs(perkDataList) do
-
-                if (DrawPerkButton(ALIEN_gui, 
-                                   GetPerkButtonX(),
-                                   GetPerkButtonY(i),
-                                   perkData,
-                                   start_btn_id + 1)) then
+                if (GuiButton(ALIEN_gui, GetPerkButtonX(), GetPerkButtonY(i), perkData.ui_name, start_btn_id + i)) then
                     SelectPerk(perkData)
                     refreshPerkList = true
                 end

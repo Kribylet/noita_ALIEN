@@ -260,10 +260,6 @@ function InventoryIsOpen()
     return (iGui ~= nil and ComponentGetValue2(iGui, "mActive") ~= nil and ComponentGetValueBool(iGui, "mActive"))
 end
 
-function DrawPerkButton(gui, x, y, perkData, btn_id)
-    return GuiButton(gui, x, y, perkData.ui_name, btn_id)
-end
-
 -- Define Perk utilities
 ALIEN_PERK_TAG = "ALIEN_PERK_TAG"
 ALIEN_PERK_REROLL_TAG = "ALIEN_PERK_REROLL_TAG"

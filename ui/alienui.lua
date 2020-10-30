@@ -8,11 +8,11 @@ local togglerMenuString = "ALIEN"
 local use_alt_res = UseAlternateResolution()
 
 local toggler = function(toggle)
-    local toggleString = "[-] "
-    if (not toggle) then
-        toggleString = "[+] "
+    if (toggle) then
+        return "[-] "
+    else
+        return "[+] "
     end
-    return toggleString
 end
 
 function GuiLayoutCoordinates()
@@ -143,16 +143,17 @@ local perkFrame = function()
 end
 
 async_loop(function()
+
+    if ALIEN_gui ~= nil then
+        GuiStartFrame(ALIEN_gui)
+    end
+
     if not InventoryIsOpen() or GameHasFlagRun("ending_game_completed") or not get_players() then
         SetPerkIconsVisible(false)
         wait(10)
         do
             return
         end
-    end
-
-    if ALIEN_gui ~= nil then
-        GuiStartFrame(ALIEN_gui)
     end
 
     if perkFrame ~= nil then

@@ -46,9 +46,12 @@ function OnPlayerSpawned(player_entity) -- This runs when player entity has been
 end
 ModLuaFileAppend("data/scripts/items/gold_pickup.lua", "mods/ALIEN/game/gold_pickup.lua")
 ModLuaFileAppend("data/scripts/perks/perk.lua", "mods/ALIEN/game/perk.lua")
-ModLuaFileAppend("data/scripts/biomes/temple_altar.lua", "mods/ALIEN/game/temple_altar.lua")
-ModLuaFileAppend("data/scripts/biomes/temple_altar_right.lua", "mods/ALIEN/game/temple_altar_right.lua")
-ModLuaFileAppend("data/scripts/biomes/temple_altar_left.lua", "mods/ALIEN/game/temple_altar_left.lua")
-ModLuaFileAppend("data/scripts/biomes/temple_altar_right_snowcastle.lua", "mods/ALIEN/game/temple_altar_right_snowcastle.lua")
-ModLuaFileAppend("data/scripts/biomes/temple_altar_right_snowcave.lua", "mods/ALIEN/game/temple_altar_right_snowcave.lua")
-ModLuaFileAppend("data/scripts/biomes/boss_arena.lua", "mods/ALIEN/game/boss_arena.lua")
+local ShouldRemovePerkRerollItem = not ModIsEnabled("dead_isnt_dead")
+if (ShouldRemovePerkRerollItem) then
+    ModLuaFileAppend("data/scripts/biomes/temple_altar.lua", "mods/ALIEN/game/temple_altar.lua")
+    ModLuaFileAppend("data/scripts/biomes/temple_altar_right.lua", "mods/ALIEN/game/temple_altar_right.lua")
+    ModLuaFileAppend("data/scripts/biomes/temple_altar_left.lua", "mods/ALIEN/game/temple_altar_left.lua")
+    ModLuaFileAppend("data/scripts/biomes/temple_altar_right_snowcastle.lua", "mods/ALIEN/game/temple_altar_right_snowcastle.lua")
+    ModLuaFileAppend("data/scripts/biomes/temple_altar_right_snowcave.lua", "mods/ALIEN/game/temple_altar_right_snowcave.lua")
+    ModLuaFileAppend("data/scripts/biomes/boss_arena.lua", "mods/ALIEN/game/boss_arena.lua")
+end

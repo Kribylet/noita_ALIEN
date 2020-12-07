@@ -25,9 +25,9 @@
 		is_emitting="1" >
 	</ParticleEmitterComponent>
 
-	<!-- <LifetimeComponent
+	<LifetimeComponent
 		lifetime="260" >
-	</LifetimeComponent> -->
+	</LifetimeComponent>
 
     <!-- <AudioComponent
       file="data/audio/Desktop/event_cues.snd"

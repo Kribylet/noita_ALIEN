@@ -55,3 +55,13 @@ if (ShouldRemovePerkRerollItem) then
     ModLuaFileAppend("data/scripts/biomes/temple_altar_right_snowcave.lua", "mods/ALIEN/game/temple_altar_right_snowcave.lua")
     ModLuaFileAppend("data/scripts/biomes/boss_arena.lua", "mods/ALIEN/game/boss_arena.lua")
 end
+
+function OnPausedChanged(is_paused, is_inventory_pause)
+    local entity_ids = EntityGetWithTag("ALIEN_PERK_TAG")
+
+    for i, entity_id in pairs(entity_ids) do
+        local sprite_component = EntityGetFirstComponentIncludingDisabled(entity_id, "SpriteComponent")
+        EntitySetComponentIsEnabled(entity_id, sprite_component, not is_paused)
+        EntityRefreshSprite(entity_id, sprite_component)
+    end
+end

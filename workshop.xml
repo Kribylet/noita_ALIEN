@@ -5,7 +5,7 @@
 **This mod is a work in progress and there may be bugs**
       **If you find any bugs please report them!**
 
-*Update: Fixed an issue where mousing over a button in the UI would block a mouse click after exit.
+*Update: Changed UI elements to only be accessible outside of the inventory using the menu toggler. Additionally fixed an icon display bug when multiples of the same perk is offered. Hopefully fixed an issue where old level up particle effects would repeat when revisiting areas. 
 
 * If your UI looks messed up, go into the mod folder and change resolution.xml (../Noita/mods/ALIEN/ui/resolution.xml) so that it reads 'value_int = 1'. This requires a restart.
 

@@ -3,7 +3,7 @@ dofile_once("data/scripts/lib/utilities.lua")
 dofile_once("mods/ALIEN/scripts/alien_utils.lua")
 
 local ALIEN_gui = GuiCreate()
-local show_alien_UI = true
+local show_alien_UI = false
 local togglerMenuString = "ALIEN"
 local use_alt_res = UseAlternateResolution()
 
@@ -24,6 +24,7 @@ function GuiLayoutCoordinates()
 end
 
 local start_btn_id = 2929
+local alien_gui_toggler_id = 3030
 local perkDataList = {}
 local showDiscardBtn = false
 local disc_confirm_offset = 60
@@ -34,7 +35,13 @@ local level_up_cost_str = "0"
 
 local perkFrame = function()
 
-    if GuiButton(ALIEN_gui, 172, 54, toggler(show_alien_UI) .. togglerMenuString, 3030) then
+    if (not show_alien_UI and GetAvailablePerkNum() ~= 0) then
+        togglerMenuString = " ALIEN (LVL+)"
+    else
+        togglerMenuString = " ALIEN"
+    end
+
+    if GuiButton(ALIEN_gui, 174, 0, toggler(show_alien_UI) .. togglerMenuString, alien_gui_toggler_id) then
         show_alien_UI = not show_alien_UI
     end
 
@@ -76,14 +83,14 @@ local perkFrame = function()
 
             for i, perkData in ipairs(perkDataList) do
                 if (GuiButton(ALIEN_gui, GetPerkButtonX(), GetPerkButtonY(i), perkData.ui_name, start_btn_id + i)) then
-                    SelectPerk(perkData)
+                    SelectPerk(i, perkData)
                     refreshPerkList = true
                 end
             end
 
             local rerollBtnPos = start_btn_id + #perkDataList + 1
 
-            local utility_x_offset = 430
+            local utility_x_offset = 480
 
             if GuiButton(ALIEN_gui, utility_x_offset, 54, "Reroll (" .. perkRerollCost .. ")", rerollBtnPos) then
                 RerollPerkList()
@@ -148,7 +155,7 @@ async_loop(function()
         GuiStartFrame(ALIEN_gui)
     end
 
-    if not InventoryIsOpen() or GameHasFlagRun("ending_game_completed") or not get_players() then
+    if InventoryIsOpen() or not get_players() then
         SetPerkIconsVisible(false)
         wait(10)
         do

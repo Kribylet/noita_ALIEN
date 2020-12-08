@@ -1,8 +1,6 @@
 <Entity>
-
   	<VariableStorageComponent 
         _tags = "alienalternateresolution"
         value_int = 0 >
 	</VariableStorageComponent>
-
 </Entity>

@@ -6,6 +6,8 @@ local ALIEN_gui = GuiCreate()
 local show_alien_UI = false
 local togglerMenuString = "ALIEN"
 local use_alt_res = UseAlternateResolution()
+local use_inventory_gui = UseInventoryGui()
+local show_mode_swap_button = ShowModeSwapButton()
 
 local toggler = function(toggle)
     if (toggle) then
@@ -24,6 +26,7 @@ function GuiLayoutCoordinates()
 end
 
 local start_btn_id = 2929
+local alien_gui_mode_switcher_id = 3029
 local alien_gui_toggler_id = 3030
 local perkDataList = {}
 local showDiscardBtn = false
@@ -43,6 +46,10 @@ local perkFrame = function()
 
     if GuiButton(ALIEN_gui, 174, 0, toggler(show_alien_UI) .. togglerMenuString, alien_gui_toggler_id) then
         show_alien_UI = not show_alien_UI
+    end
+
+    if show_mode_swap_button and GuiButton(ALIEN_gui, 280, 0, "Swap UI Mode", alien_gui_mode_switcher_id) then
+        use_inventory_gui = not use_inventory_gui
     end
 
     if (not show_alien_UI) then
@@ -150,12 +157,11 @@ local perkFrame = function()
 end
 
 async_loop(function()
-
     if ALIEN_gui ~= nil then
         GuiStartFrame(ALIEN_gui)
     end
 
-    if InventoryIsOpen() or not get_players() then
+    if not get_players() or ALIEN_xor(InventoryIsOpen(), use_inventory_gui) then -- !XOR logic for gui preference + current state, write it out on paper..
         SetPerkIconsVisible(false)
         wait(10)
         do

@@ -5,7 +5,9 @@
 **This mod is a work in progress and there may be bugs**
       **If you find any bugs please report them!**
 
-*Update: Changed UI elements to only be accessible outside of the inventory using the menu toggler. Additionally fixed an icon display bug when multiples of the same perk is offered. Hopefully fixed an issue where old level up particle effects would repeat when revisiting areas. 
+*Update: Made UI settings depend on user settings. The default setting puts ALIEN in the inventory screen and includes a button to swap the UI out of the inventory screen. UI swaps are not persistent (new game/restart will reset it) so there is also an XML file where the default value can be changed (../Noita/mods/ALIEN/ui/gui_mode.xml). You can also disable the mode swap button in that file.
+
+*Prev. Update: Changed UI elements to only be accessible outside of the inventory using the menu toggler. Additionally fixed an icon display bug when multiples of the same perk is offered. Hopefully fixed an issue where old level up particle effects would repeat when revisiting areas. 
 
 * If your UI looks messed up, go into the mod folder and change resolution.xml (../Noita/mods/ALIEN/ui/resolution.xml) so that it reads 'value_int = 1'. This requires a restart.
 

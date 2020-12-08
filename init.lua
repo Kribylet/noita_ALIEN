@@ -1,3 +1,7 @@
+function OnWorldInitialized()
+    EntityLoad("mods/ALIEN/ui/alienui.xml")
+end
+
 function OnPlayerSpawned(player_entity) -- This runs when player entity has been created
 
     if (not EntityGetComponent(player_entity, "VariableStorageComponent", "var_player_level")) then
@@ -41,8 +45,6 @@ function OnPlayerSpawned(player_entity) -- This runs when player entity has been
             value_int = 0
         })
     end
-
-    EntityLoad("mods/ALIEN/ui/alienui.xml")
 end
 ModLuaFileAppend("data/scripts/items/gold_pickup.lua", "mods/ALIEN/game/gold_pickup.lua")
 ModLuaFileAppend("data/scripts/perks/perk.lua", "mods/ALIEN/game/perk.lua")

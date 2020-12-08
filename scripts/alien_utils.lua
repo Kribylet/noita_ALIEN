@@ -154,6 +154,35 @@ end
 
 -- Define UI specific utilities
 
+
+function UseInventoryGui()
+    local config_entity = EntityLoad("mods/ALIEN/ui/gui_mode.xml")
+
+    local guiModeComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "alienuseinventorygui")
+
+    local value = ComponentGetValue2(guiModeComponent, "value_int")
+
+    EntityKill(config_entity)
+
+    return value ~= 0
+end
+
+function ShowModeSwapButton()
+    local config_entity = EntityLoad("mods/ALIEN/ui/gui_mode.xml")
+
+    modeSwapButtonComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "showmodeswapbutton")
+
+    local value = ComponentGetValue2(modeSwapButtonComponent, "value_int")
+
+    EntityKill(config_entity)
+
+    return value ~= 0
+end
+
+function ALIEN_xor(a, b)
+    if a ~= b then return true else return false end
+end
+
 local perk_button_x_anchor = 300
 local perk_button_y_anchor = 44
 local perk_button_y_walk = 10
@@ -161,16 +190,14 @@ local perk_button_y_walk = 10
 local perk_icon_offset_multiplier = 2
 
 function UseAlternateResolution()
-    local player_entity = get_players()[1]
-    
-    local alternateResComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent", "alienalternateresolution")
-    if (alternateResComponent ~= nil) then EntityRemoveComponent(player_entity, alternateResComponent) end
+    local config_entity = EntityLoad("mods/ALIEN/ui/resolution.xml")
 
-    EntityLoadToEntity("mods/ALIEN/ui/resolution.xml", player_entity)
-
-    alternateResComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent", "alienalternateresolution")
+    local alternateResComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "alienalternateresolution")
 
     local value = ComponentGetValue2(alternateResComponent, "value_int")
+
+    EntityKill(config_entity)
+
     return value ~= 0
 end
 

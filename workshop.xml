@@ -5,13 +5,13 @@
 **This mod is a work in progress and there may be bugs**
       **If you find any bugs please report them!**
 
-*Update: Made UI settings depend on user settings. The default setting puts ALIEN in the inventory screen and includes a button to swap the UI out of the inventory screen. UI swaps are not persistent (new game/restart will reset it) so there is also an XML file where the default value can be changed (../Noita/mods/ALIEN/ui/gui_mode.xml). You can also disable the mode swap button in that file.
+* Update: Made use of newer mod API to draw perks + icons, with mouse over descriptions!
 
-*Prev. Update: Changed UI elements to only be accessible outside of the inventory using the menu toggler. Additionally fixed an icon display bug when multiples of the same perk is offered. Hopefully fixed an issue where old level up particle effects would repeat when revisiting areas. 
+* Previous update: Made UI settings depend on user settings. The default setting puts ALIEN in the inventory screen and includes a button to swap the UI out of the inventory screen. UI swaps are not persistent (new game/restart will reset it) so there is also an XML file where the default value can be changed (../Noita/mods/ALIEN/ui/gui_mode.xml). You can also disable the mode swap button in that file.
 
 * If your UI looks messed up, go into the mod folder and change resolution.xml (../Noita/mods/ALIEN/ui/resolution.xml) so that it reads 'value_int = 1'. This requires a restart.
 
-*I have heard that there might be mod compatibility issues that cause the Divine Tablet not to spawn. If you notice this problem, please send me a list of the mods you're using.
+* If you notice any problems with the mod, please let me know! If you're using other mods, please include a list of the mods you're using.
                     
 I made this mod primarily to not have to chase parallel worlds to power up in the endgame, since that bloats your savegame and can lead to crashes. The point of the mod is not to make you overpowered, but I still need to tweak the experience costs for the levels. Right now they're just guesses from me.
 

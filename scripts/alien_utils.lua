@@ -154,6 +154,39 @@ end
 
 -- Define UI specific utilities
 
+function string_split (inputstr, sep)
+    if sep == nil then
+            sep = "%s"
+    end
+    local t={}
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+            table.insert(t, str)
+    end
+    return t
+end
+
+function sentence_split(inputstr, max_line_length, sep)
+    if sep == nil then
+        sep = "%s"
+    end
+    local words = string_split(inputstr, sep)
+
+    local sentences = {}
+    local sentence = ""
+
+    for i, word in ipairs(words) do
+        if string.len(sentence) + string.len(word) > max_line_length then
+            table.insert(sentences, sentence)
+            sentence = ""
+        end
+        if sentence == "" then sentence = word else sentence = sentence.." "..word end
+    end
+
+    if sentence ~= "" then table.insert(sentences, sentence) end
+
+    return sentences
+end
+
 
 function UseInventoryGui()
     local config_entity = EntityLoad("mods/ALIEN/ui/gui_mode.xml")
@@ -185,7 +218,7 @@ end
 
 local perk_button_x_anchor = 300
 local perk_button_y_anchor = 44
-local perk_button_y_walk = 10
+local perk_button_y_walk = 16
 
 local perk_icon_offset_multiplier = 2
 
@@ -246,6 +279,12 @@ function AddUIPerkIcon(perk_data, index, x, y)
         update_transform = "1",
         update_transform_rotation = "0",
         z_index = "-10000",
+    })
+    EntityAddComponent(ui_perk_icon_entity, "InteractableComponent",
+    {
+        radius = 10,
+        ui_text = perk_data.ui_description,
+        name = "",
     })
     EntityAddTag(ui_perk_icon_entity, ALIEN_PERK_TAG)
     EntitySetTransform(ui_perk_icon_entity, x, y)
@@ -800,8 +839,6 @@ function AddPerkToPlayer(perk_data)
         icon_sprite_file = perk_data.ui_icon
     })
     EntityAddChild(player_entity, entity_ui)
-
-    if (perk_data.id == "EXTRA_PERK") then perk_desc = "From now on, you will get offered an extra perk when you level up." end
 
     GamePrintImportant(GameTextGet("$log_pickedup_perk", GameTextGetTranslatedOrNot(perk_name)), perk_desc)
 end

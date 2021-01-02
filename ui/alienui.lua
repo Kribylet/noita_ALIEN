@@ -9,6 +9,9 @@ local use_alt_res = UseAlternateResolution()
 local use_inventory_gui = UseInventoryGui()
 local show_mode_swap_button = ShowModeSwapButton()
 
+local gui_z = -9000
+local tooltip_z = -100
+
 local toggler = function(toggle)
     if (toggle) then
         return "[-] "
@@ -26,8 +29,17 @@ function GuiLayoutCoordinates()
 end
 
 local start_btn_id = 2929
-local alien_gui_mode_switcher_id = 3029
-local alien_gui_toggler_id = 3030
+local current_btn_id = nil
+
+function next_id()
+    if current_btn_id then
+        current_btn_id = current_btn_id + 1
+    else
+        current_btn_id = start_btn_id
+    end
+    return current_btn_id
+end
+
 local perkDataList = {}
 local showDiscardBtn = false
 local disc_confirm_offset = 60
@@ -35,6 +47,32 @@ local disc_confirm_offset = 60
 local prev_level = 0
 local level_up_cost = 0
 local level_up_cost_str = "0"
+
+GuiZSet(ALIEN_gui, gui_z)
+
+local max_line_length = 40
+
+function renderTooltip(x, y, perk_data)
+    local screen_width, screen_height = GuiGetScreenDimensions( ALIEN_gui )
+    GuiZSet(ALIEN_gui, tooltip_z)
+    
+    local perk_desc = GameTextGetTranslatedOrNot(perk_data.ui_description)
+
+    local sentences = sentence_split(perk_desc, max_line_length)
+
+    GuiLayoutBeginLayer(ALIEN_gui)
+        GuiZSet(ALIEN_gui, tooltip_z)
+        GuiLayoutBeginVertical(ALIEN_gui, x / screen_width * 100.0, y / screen_height * 100.0 )
+            GuiBeginAutoBox(ALIEN_gui)
+                for i, sentence in ipairs(sentences) do
+                    GuiText(ALIEN_gui, 0, 0, sentence )
+                end
+                GuiZSetForNextWidget(ALIEN_gui, tooltip_z + 1)
+            GuiEndAutoBoxNinePiece(ALIEN_gui)
+        GuiLayoutEnd(ALIEN_gui)
+    GuiLayoutEndLayer(ALIEN_gui)
+    GuiZSet(ALIEN_gui, 1000)
+end
 
 local perkFrame = function()
 
@@ -44,11 +82,11 @@ local perkFrame = function()
         togglerMenuString = " ALIEN"
     end
 
-    if GuiButton(ALIEN_gui, 174, 0, toggler(show_alien_UI) .. togglerMenuString, alien_gui_toggler_id) then
+    if GuiButton(ALIEN_gui, 174, 0, toggler(show_alien_UI) .. togglerMenuString, next_id()) then
         show_alien_UI = not show_alien_UI
     end
 
-    if show_mode_swap_button and GuiButton(ALIEN_gui, 280, 0, "Swap UI Mode", alien_gui_mode_switcher_id) then
+    if show_mode_swap_button and GuiButton(ALIEN_gui, 280, 0, "Swap UI Mode", next_id()) then
         use_inventory_gui = not use_inventory_gui
     end
 
@@ -57,6 +95,17 @@ local perkFrame = function()
             SetPerkIconsVisible(false)
             return false
         end
+    end
+
+    if GuiButton(ALIEN_gui, 185, 44, "Gimme nuggies", next_id()) then
+        local x, y = EntityGetTransform(get_players()[1])
+        for i=1,10 do
+            EntityLoad("data/entities/items/pickup/goldnugget_10000.xml", x, y)
+        end
+    end
+
+    if GuiButton(ALIEN_gui, 400, 44, "Gimme extra", next_id()) then
+        AddPerkToPlayer(get_perk_with_id(perk_list, "EXTRA_PERK"))
     end
 
     SetPerkIconsVisible(true)
@@ -76,7 +125,6 @@ local perkFrame = function()
     GuiText(ALIEN_gui, 0, 0, "Level : " .. current_level)
     GuiLayoutEnd(ALIEN_gui)
 
-    local storeBtnPos = start_btn_id
     local refreshPerkList = false
 
     if (GetAvailablePerkNum() ~= 0) then
@@ -88,41 +136,47 @@ local perkFrame = function()
 
             local perkRerollCost = GetPerkRerollCost()
 
-            for i, perkData in ipairs(perkDataList) do
-                if (GuiButton(ALIEN_gui, GetPerkButtonX(), GetPerkButtonY(i), perkData.ui_name, start_btn_id + i)) then
-                    SelectPerk(i, perkData)
+            for i, perk_data in ipairs(perkDataList) do
+                local button_x = GetPerkButtonX()
+                local button_y = GetPerkButtonY(i)
+                local perk_name = GameTextGetTranslatedOrNot(perk_data.ui_name)
+                GuiImageButton(ALIEN_gui, next_id(), button_x, button_y, perk_name, perk_data.ui_icon)
+                local left_click,right_click,hover,x,y,width,height,draw_x,draw_y = GuiGetPreviousWidgetInfo(ALIEN_gui)
+                if left_click then
+                    SelectPerk(i, perk_data)
                     refreshPerkList = true
+                elseif hover then
+                    renderTooltip(x + width, y + height, perk_data)
+                    -- GamePrint(tostring(y))
                 end
             end
-
-            local rerollBtnPos = start_btn_id + #perkDataList + 1
+            -- for i, perkData in ipairs(perkDataList) do
+            --     if (GuiButton(ALIEN_gui, GetPerkButtonX(), GetPerkButtonY(i), perkData.ui_name, start_btn_id + i)) then
+            --         SelectPerk(i, perkData)
+            --         refreshPerkList = true
+            --     end
+            -- end
 
             local utility_x_offset = 480
 
-            if GuiButton(ALIEN_gui, utility_x_offset, 54, "Reroll (" .. perkRerollCost .. ")", rerollBtnPos) then
+            if GuiButton(ALIEN_gui, utility_x_offset, 54, "Reroll (" .. perkRerollCost .. ")", next_id()) then
                 RerollPerkList()
                 refreshPerkList = true
             end
 
-            local showDiscardBtnPos = rerollBtnPos + 1
-
-            if GuiButton(ALIEN_gui, utility_x_offset, 64, "Discard Perks?", showDiscardBtnPos) then
+            if GuiButton(ALIEN_gui, utility_x_offset, 64, "Discard Perks?", next_id()) then
                 showDiscardBtn = not showDiscardBtn
             end
 
-            local discardBtnPos = showDiscardBtnPos + 1
-
             if (showDiscardBtn) then
-                if GuiButton(ALIEN_gui, utility_x_offset + disc_confirm_offset, 64, "- CONFIRM", discardBtnPos) then
+                if GuiButton(ALIEN_gui, utility_x_offset + disc_confirm_offset, 64, "- CONFIRM", next_id()) then
                     DiscardPerks()
                     showDiscardBtn = false
                     refreshPerkList = true
                 end
             end
 
-            storeBtnPos = discardBtnPos + 1
-
-            if GuiButton(ALIEN_gui, utility_x_offset, 74, "Store Perks", storeBtnPos) then
+            if GuiButton(ALIEN_gui, utility_x_offset, 74, "Store Perks", next_id()) then
                 StorePerkSet()
                 refreshPerkList = true
             end
@@ -144,7 +198,7 @@ local perkFrame = function()
                 y_offset = -30
             end
             if GuiButton(ALIEN_gui, 185 + x_offset, 114 + 10 * i + y_offset,
-                "Perk Set " .. i .. " (" .. biomeName .. ")", storeBtnPos + i) then
+                "Perk Set " .. i .. " (" .. biomeName .. ")", next_id()) then
                 LoadStoredPerkSet(i)
                 refreshPerkList = true
             end
@@ -170,6 +224,7 @@ async_loop(function()
     end
 
     if perkFrame ~= nil then
+        current_btn_id = start_btn_id
         perkFrame()
     end
     wait(0)

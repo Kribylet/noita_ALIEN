@@ -22,7 +22,7 @@ end
 
 function GuiLayoutCoordinates()
     if (not use_alt_res) then
-        return 27, 18
+        return 27, 17
     else
         return 22, 14
     end
@@ -55,8 +55,8 @@ local max_line_length = 40
 function renderTooltip(x, y, perk_data)
     local screen_width, screen_height = GuiGetScreenDimensions( ALIEN_gui )
     GuiZSet(ALIEN_gui, tooltip_z)
-    
-    local perk_desc = GameTextGetTranslatedOrNot(perk_data.ui_description)
+
+    local perk_desc = GetPerkDescription(perk_data)
 
     local sentences = sentence_split(perk_desc, max_line_length)
 
@@ -92,23 +92,9 @@ local perkFrame = function()
 
     if (not show_alien_UI) then
         do
-            SetPerkIconsVisible(false)
             return false
         end
     end
-
-    if GuiButton(ALIEN_gui, 185, 44, "Gimme nuggies", next_id()) then
-        local x, y = EntityGetTransform(get_players()[1])
-        for i=1,10 do
-            EntityLoad("data/entities/items/pickup/goldnugget_10000.xml", x, y)
-        end
-    end
-
-    if GuiButton(ALIEN_gui, 400, 44, "Gimme extra", next_id()) then
-        AddPerkToPlayer(get_perk_with_id(perk_list, "EXTRA_PERK"))
-    end
-
-    SetPerkIconsVisible(true)
 
     local current_level = GetPlayerLevel();
     if (current_level ~= prev_level) then
@@ -118,7 +104,7 @@ local perkFrame = function()
     end
     local current_xp = math.min(GetPlayerXP(), level_up_cost);
 
-    Gui_X, Gui_Y = GuiLayoutCoordinates(use_alt_res)
+    local Gui_X, Gui_Y = GuiLayoutCoordinates(use_alt_res)
 
     GuiLayoutBeginVertical(ALIEN_gui, Gui_X, Gui_Y)
     GuiText(ALIEN_gui, 0, 0, "XP : " .. current_xp .. " / " .. level_up_cost_str)
@@ -147,36 +133,29 @@ local perkFrame = function()
                     refreshPerkList = true
                 elseif hover then
                     renderTooltip(x + width, y + height, perk_data)
-                    -- GamePrint(tostring(y))
                 end
             end
-            -- for i, perkData in ipairs(perkDataList) do
-            --     if (GuiButton(ALIEN_gui, GetPerkButtonX(), GetPerkButtonY(i), perkData.ui_name, start_btn_id + i)) then
-            --         SelectPerk(i, perkData)
-            --         refreshPerkList = true
-            --     end
-            -- end
 
             local utility_x_offset = 480
 
-            if GuiButton(ALIEN_gui, utility_x_offset, 54, "Reroll (" .. perkRerollCost .. ")", next_id()) then
+            if GuiButton(ALIEN_gui, utility_x_offset, 60, "Reroll (" .. perkRerollCost .. ")", next_id()) then
                 RerollPerkList()
                 refreshPerkList = true
             end
 
-            if GuiButton(ALIEN_gui, utility_x_offset, 64, "Discard Perks?", next_id()) then
+            if GuiButton(ALIEN_gui, utility_x_offset, 70, "Discard Perks?", next_id()) then
                 showDiscardBtn = not showDiscardBtn
             end
 
             if (showDiscardBtn) then
-                if GuiButton(ALIEN_gui, utility_x_offset + disc_confirm_offset, 64, "- CONFIRM", next_id()) then
+                if GuiButton(ALIEN_gui, utility_x_offset + disc_confirm_offset, 70, "- CONFIRM", next_id()) then
                     DiscardPerks()
                     showDiscardBtn = false
                     refreshPerkList = true
                 end
             end
 
-            if GuiButton(ALIEN_gui, utility_x_offset, 74, "Store Perks", next_id()) then
+            if GuiButton(ALIEN_gui, utility_x_offset, 80, "Store Perks", next_id()) then
                 StorePerkSet()
                 refreshPerkList = true
             end
@@ -216,7 +195,6 @@ async_loop(function()
     end
 
     if not get_players() or ALIEN_xor(InventoryIsOpen(), use_inventory_gui) then -- !XOR logic for gui preference + current state, write it out on paper..
-        SetPerkIconsVisible(false)
         wait(10)
         do
             return

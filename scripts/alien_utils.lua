@@ -154,6 +154,18 @@ end
 
 -- Define UI specific utilities
 
+function GetPerkDescription(perk_data)
+    local perk_desc = GameTextGetTranslatedOrNot(perk_data.ui_description)
+    if perk_data.id == "EXTRA_PERK" then
+        if perk_desc == "From now on you will find an extra perk in every Holy Mountain." then
+            perk_desc = "From now on, you will get offered an extra perk when you level up."
+        else
+            perk_desc = perk_desc.." (Level Up!)"
+        end
+    end
+    return perk_desc
+end
+
 function string_split (inputstr, sep)
     if sep == nil then
             sep = "%s"
@@ -265,81 +277,9 @@ function GetPerkIconEntityIDs()
     return perk_icon_entities
 end
 
-function AddUIPerkIcon(perk_data, index, x, y)
-
-    local ui_perk_icon_entity = EntityCreateNew(GetPerkIconName(index))
-    EntityAddComponent(ui_perk_icon_entity, "SpriteComponent",
-    {
-        image_file = perk_data.perk_icon,
-        ui_is_parent = "1",
-        alpha = "1",
-        visible = "1",
-        offset_x = "18",
-        offset_y = "-2",
-        update_transform = "1",
-        update_transform_rotation = "0",
-        z_index = "-10000",
-    })
-    EntityAddComponent(ui_perk_icon_entity, "InteractableComponent",
-    {
-        radius = 10,
-        ui_text = perk_data.ui_description,
-        name = "",
-    })
-    EntityAddTag(ui_perk_icon_entity, ALIEN_PERK_TAG)
-    EntitySetTransform(ui_perk_icon_entity, x, y)
-
-    return ui_perk_icon_entity
-end
 
 function GetPerkIconName(perk_id)
     return perk_id.."ALIEN_PERK_ICON"
-end
-
-
-
-function SetPerkIconsVisible(shouldBeVisible)
-
-    local perk_id_list = GetAvailablePerkIDs()
-
-    if (perk_id_list == nil) then do return end end
-
-    local visibilityOffset = 1000
-
-    if (shouldBeVisible) then visibilityOffset = 0 end
-
-    for i, perk_id in ipairs(perk_id_list) do
-
-        local icon_entity
-
-        if (perk_icon_entities[i] ~= nil) then
-            icon_entity = perk_icon_entities[i]
-            goto continue
-        end
-
-        icon_entity = AddUIPerkIcon(get_perk_with_id(perk_list, perk_id),
-                                    i,
-                                    GetPerkButtonX()*perk_icon_offset_multiplier,
-                                    GetPerkButtonY(i)*perk_icon_offset_multiplier)
-        table.insert(perk_icon_entities, icon_entity)
-
-        ::continue::
-        EntitySetTransform(icon_entity,
-                           GetPerkButtonX()*perk_icon_offset_multiplier + visibilityOffset,
-                           GetPerkButtonY(i)*perk_icon_offset_multiplier + visibilityOffset)
-    end
-end
-
-
-function RemoveUIPerkIcon(index)
-    EntityKill(table.remove(perk_icon_entities, index)) -- Table.remove performance is bad but this list is tiny
-end
-
-function RemoveAllUIPerkIcons()
-    for i, entity_id in pairs(perk_icon_entities) do
-        EntityKill(entity_id)
-    end
-    perk_icon_entities = {}
 end
 
 function InventoryIsOpen()
@@ -386,9 +326,6 @@ function RemoveAllAvailablePerks()
         end
     end
 
-
-    RemoveAllUIPerkIcons()
-
     RemovePerkRerollCost()
 
     return true
@@ -404,7 +341,6 @@ function RemoveAvailablePerkID(index)
 
     local components = EntityGetComponent(player_entity, "VariableStorageComponent", ALIEN_PERK_TAG)
 
-    RemoveUIPerkIcon(index)
     EntityRemoveComponent(player_entity, components[index])
 
     return true

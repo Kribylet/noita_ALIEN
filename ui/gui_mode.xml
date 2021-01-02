@@ -1,0 +1,10 @@
+<Entity>
+  	<VariableStorageComponent 
+        _tags = "alienuseinventorygui"
+        value_int = 1 >
+	</VariableStorageComponent>
+  	<VariableStorageComponent 
+        _tags = "showmodeswapbutton"
+        value_int = 1 >
+	</VariableStorageComponent>
+</Entity>

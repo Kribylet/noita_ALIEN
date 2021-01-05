@@ -8,6 +8,14 @@ SetRandomSeed(41515166, 12310915)
 
 -- LUA Utilities
 
+-- simple utility function to return the player entity By Coxas (Noita Discord)
+function getPlayerEntity()
+    local players = EntityGetWithTag("player_unit")
+    if #players == 0 then return end
+
+    return players[1]
+end
+
 function ArrayHasValue(array, value)
     for _, item in ipairs(array) do
         if (item == value) then

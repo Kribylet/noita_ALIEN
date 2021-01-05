@@ -194,7 +194,7 @@ async_loop(function()
         GuiStartFrame(ALIEN_gui)
     end
 
-    if not get_players() or ALIEN_xor(InventoryIsOpen(), use_inventory_gui) then -- !XOR logic for gui preference + current state, write it out on paper..
+    if getPlayerEntity() == nil or ALIEN_xor(InventoryIsOpen(), use_inventory_gui) then -- !XOR logic for gui preference + current state, write it out on paper..
         wait(10)
         do
             return

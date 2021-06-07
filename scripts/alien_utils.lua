@@ -996,7 +996,6 @@ local fixed_perk_get_spawn_order = function()
 			local stack_count = stackable_count[ perk_name ] or -1
 			-- print( perk_name .. ": " .. tostring( stack_count ) )
 			if( ( stack_count == -1 ) or ( pickup_count >= stack_count ) ) then
-                GamePrint(GameTextGetTranslatedOrNot( GetPerkDataById(perk_deck[i]).ui_name ) .. " was purged, picked " .. pickup_count .. " times this run")
 				perk_deck[i] = ""
 			end
 		end
@@ -1110,7 +1109,13 @@ function PerformDivineTabletEffect()
     end
 
     SetTimesVisitedTemple(timesVisitedTemple)
+end
 
+
+function PerformNightmareTabletEffect()
+    GamePrintImportant("The Shattered God", "Bring me vengeance.")
+    local perk_count = tonumber(GlobalsGetValue("TEMPLE_PERK_COUNT", "3"))
+    GeneratePerkList(perk_count)
 end
 
 function GetAvailablePerkIDs()

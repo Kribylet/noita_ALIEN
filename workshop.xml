@@ -5,11 +5,23 @@
 **This mod is a work in progress and there may be bugs**
       **If you find any bugs please report them!**
 
-* Update: Made use of newer mod API to draw perks + icons, with mouse over descriptions! Fixed issue where UI might disappear when polymorphed.
+* Update (2021 June 7th): A lot of fixes and new features.
 
-* Previous update: Made UI settings depend on user settings. The default setting puts ALIEN in the inventory screen and includes a button to swap the UI out of the inventory screen. UI swaps are not persistent (new game/restart will reset it) so there is also an XML file where the default value can be changed (../Noita/mods/ALIEN/ui/gui_mode.xml). You can also disable the mode swap button in that file.
+* Update perk generation to emulate vanilla generation more closely. Hopefully this will lead to less problems if perk generation changes in the future.
 
-* If your UI looks messed up, go into the mod folder and change resolution.xml (../Noita/mods/ALIEN/ui/resolution.xml) so that it reads 'value_int = 1'. This requires a restart.
+* Fix UI crash related to picking certain perks.
+
+* Add support for Nightmare starting perks not disappearing (sort of, you don't lose them while you're level 1, after that they're like normal). New spooky nightmare altar!
+
+* Fix RNG issue with 'Always Cast'-perk always being the same, though this can still be an issue if you pick multiple 'Always Cast' in a row in the same general area.
+
+* UI preferences can now be set in the mod settings and is remembered.
+
+* Several new gameplay related settings: 'Greed Perk' XP scaling, factor for level XP cost (0.5x, 1x, 2, 3x), high level XP cost scaling, temple level up behavior and perk storage accessibility.
+
+* An issue that sometimes showed non-localized perk descriptions, I think?
+
+* Previous update: Made use of newer mod API to draw perks + icons, with mouse over descriptions! Fixed issue where UI might disappear when polymorphed.
 
 * If you notice any problems with the mod, please let me know! If you're using other mods, please include a list of the mods you're using.
                     

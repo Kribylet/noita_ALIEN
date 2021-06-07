@@ -110,6 +110,22 @@ mod_settings =
 				values = { {"never", "Never"}, {"if_behind","If behind"}, {"always","Always"} },
 				scope = MOD_SETTING_SCOPE_RUNTIME_RESTART,
 			},
+			{
+				id = "temple_levels_cost",
+				ui_name = "Temple Level Up Cost",
+				ui_description = "Sets the cost of temple level ups.",
+				value_default = "full",
+				values = { {"full", "Full (XP Cost Saved)"}, {"lose_xp","Discount (Pay Current XP)"}, {"keep_xp","Free (Keep Current XP)"} },
+				scope = MOD_SETTING_SCOPE_RUNTIME_RESTART,
+			},
+			{
+				id = "perk_storage",
+				ui_name = "Perk Storage",
+				ui_description = "Controls where stored perk sets can be retrieved.",
+				value_default = "biome",
+				values = { {"biome", "Same Biome"}, {"global","Global"} },
+				scope = MOD_SETTING_SCOPE_RUNTIME_RESTART,
+			},
 			--{
 			--	id = "ground_gold_works",
 			--	ui_name = "Ground Gold Gives XP",

@@ -228,7 +228,7 @@ function sentence_split(inputstr, max_line_length, sep)
     local sentences = {}
     local sentence = ""
 
-    for i, word in ipairs(words) do
+    for _, word in ipairs(words) do
         if string.len(sentence) + string.len(word) > max_line_length then
             table.insert(sentences, sentence)
             sentence = ""
@@ -240,31 +240,6 @@ function sentence_split(inputstr, max_line_length, sep)
 
     return sentences
 end
-
-
---function UseInventoryGui()
---    local config_entity = EntityLoad("mods/ALIEN/ui/gui_mode.xml")
---
---    local guiModeComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "alienuseinventorygui")
---
---    local value = ComponentGetValue2(guiModeComponent, "value_int")
---
---    EntityKill(config_entity)
---
---    return value ~= 0
---end
-
---function ShowModeSwapButton()
---    local config_entity = EntityLoad("mods/ALIEN/ui/gui_mode.xml")
---
---    modeSwapButtonComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "showmodeswapbutton")
---
---    local value = ComponentGetValue2(modeSwapButtonComponent, "value_int")
---
---    EntityKill(config_entity)
---
---    return value ~= 0
---end
 
 function ALIEN_xor(a, b)
     if a ~= b then return true else return false end
@@ -349,6 +324,8 @@ function RemoveAllAvailablePerks()
             EntityRemoveComponent(player_entity, comp)
         end
     end
+
+    RemovePerkRerollCost()
 
     return true
 end
@@ -729,8 +706,9 @@ function LoadStoredPerkSet(i)
     end
 
     local storedBiome = GetStoredBiome(i)
+    local perk_storage = getAlienSetting("perk_storage")
 
-    if (storedBiome ~= GetCurrentBiomeName()) then
+    if (perk_storage == "biome" and storedBiome ~= GetCurrentBiomeName()) then
         GamePrint("This perk set was stored in the " .. storedBiome .. " biome.")
         GamePrint("You have to go there to load this perk set.")
         do
@@ -834,7 +812,7 @@ function AddPerkToPlayer(perk_data)
 
 	-- certain other perks may be marked as picked-up
 	if perk_data.remove_other_perks ~= nil then
-		for i,v in ipairs( perk_data.remove_other_perks ) do
+		for _,v in ipairs( perk_data.remove_other_perks ) do
 			local f = get_perk_picked_flag_name( v )
 			GameAddFlagRun( f )
 		end
@@ -923,7 +901,7 @@ local fixed_perk_get_spawn_order = function()
 	local stackable_count = {}			-- -1 = NON_STACKABLE otherwise the result is how many times can be stacked
 
 	-- function create_perk_pool
-	for i,perk_data in ipairs(perk_list) do
+	for _,perk_data in ipairs(perk_list) do
 		if ( ( table_contains( ignore_these, perk_data.id ) == false ) and ( perk_data.not_in_default_perk_pool == nil or perk_data.not_in_default_perk_pool == false ) ) then
 			local perk_name = perk_data.id
 			local how_many_times = 1
@@ -1011,16 +989,19 @@ local fixed_perk_get_spawn_order = function()
 	return perk_deck
 end
 
-function GeneratePerkList(perk_count)
+function GeneratePerkList(perk_count, skip_list)
 
     -- All available perks should have been removed already
 
-    local perks = fixed_perk_get_spawn_order()
+    skip_list = skip_list or {}
+
+    local perks = perk_get_spawn_order(skip_list)
+    --local perks = fixed_perk_get_spawn_order()
 
 	local next_perk_index = tonumber( GlobalsGetValue( "TEMPLE_NEXT_PERK_INDEX", "1" ) )
 	local perk_id = perks[next_perk_index]
 
-    for i = 1, perk_count do
+    for _ = 1, perk_count do
         while( perk_id == nil or perk_id == "" ) do
             -- if we over flow
             perks[next_perk_index] = "LEGGY_FEET"
@@ -1029,6 +1010,7 @@ function GeneratePerkList(perk_count)
                 next_perk_index = 1
             end
             perk_id = perks[next_perk_index]
+
 	    end
 
         next_perk_index = next_perk_index + 1
@@ -1085,8 +1067,17 @@ end
 local doTabletLevelUp = function()
     local current_level = GetPlayerLevel()
 
-    local nextLevelUpCost = GetLevelUpCostAt(current_level) + GetLevelUpCostAt(current_level + 1)
-    SetLevelUpCost(current_level + 1, nextLevelUpCost / tonumber(getAlienSetting("xp_cost_scaling")))
+    local temple_levels_cost = getAlienSetting("temple_levels_cost")
+
+    if (temple_levels_cost == "full") then
+        local nextLevelUpCost = GetLevelUpCostAt(current_level) + GetLevelUpCostAt(current_level + 1)
+        SetLevelUpCost(current_level + 1, nextLevelUpCost / tonumber(getAlienSetting("xp_cost_scaling")))
+    elseif (temple_levels_cost == "lose_xp") then
+        SetPlayerXP(0)
+    -- elseif (temple_levels_free == "keep_xp") then
+        -- pass
+    end
+
     SetLevelUpCost(current_level, 0)
 
     if (PlayerShouldLevelUp()) then
@@ -1115,7 +1106,7 @@ end
 function PerformNightmareTabletEffect()
     GamePrintImportant("The Shattered God", "Bring me vengeance.")
     local perk_count = tonumber(GlobalsGetValue("TEMPLE_PERK_COUNT", "3"))
-    GeneratePerkList(perk_count)
+    GeneratePerkList(perk_count, {"EDIT_WANDS_EVERYWHERE"})
 end
 
 function GetAvailablePerkIDs()
@@ -1166,29 +1157,9 @@ function GetAvailablePerkNum()
     return #components
 end
 
-local shouldKillPerks = function(player_entity)
-    local kill_other_perks = true
-
-    local components = EntityGetComponent(player_entity, "VariableStorageComponent")
-
-    if (components ~= nil) then
-        for key, comp_id in pairs(components) do
-            local var_name = ComponentGetValue(comp_id, "name")
-            if (var_name == "perk_dont_remove_others") then
-                if (ComponentGetValueBool(comp_id, "value_bool")) then
-                    kill_other_perks = false
-                end
-            end
-        end
-    end
-    return kill_other_perks
-end
-
 local performPerkRemoval = function(index)
 
-    local player_entity = get_players()[1]
-
-    local kill_other_perks = shouldKillPerks(player_entity)
+    local kill_other_perks = GetPlayerLevel() ~= 1
 
     if kill_other_perks then
         local perk_destroy_chance = tonumber(GlobalsGetValue("TEMPLE_PERK_DESTROY_CHANCE", "100"))
@@ -1200,12 +1171,18 @@ local performPerkRemoval = function(index)
             RemoveAllAvailablePerks()
         else
             RemoveAvailablePerkID(index)
+            if (GetAvailablePerkNum() == 0) then
+                RemovePerkRerollCost()
+            end
+        end
+    else
+        RemoveAvailablePerkID(index)
+        if (GetAvailablePerkNum() == 0) then
+            RemovePerkRerollCost()
         end
     end
 
-    if (GetAvailablePerkNum() == 0) then
-        RemovePerkRerollCost()
-    end
+
 end
 
 function SelectPerk(index, perk_data)
@@ -1255,12 +1232,10 @@ function RerollPerkList()
     GlobalsSetValue("TEMPLE_PERK_REROLL_COUNT", tostring(perk_reroll_count))
 
     RemoveAllAvailablePerks()
-    RemovePerkRerollCost()
     GeneratePerkList(available_perks)
 end
 
 function DiscardPerks()
-
     RemoveAllAvailablePerks()
     if (PlayerShouldLevelUp()) then
         PerformLevelUp()

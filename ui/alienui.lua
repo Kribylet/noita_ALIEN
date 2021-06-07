@@ -81,24 +81,6 @@ local perkFrame = function()
         end
     end
 
-    if GuiButton(ALIEN_gui, 185, 44, "Gimme nuggies", next_id()) then
-        local x, y = EntityGetTransform(get_players()[1])
-        for i=1,10 do
-            EntityLoad("data/entities/items/pickup/goldnugget_10000.xml", x, y)
-        end
-    end
-
-    if GuiButton(ALIEN_gui, 400, 44, "Gimme extra", next_id()) then
-        AddPerkToPlayer(get_perk_with_id(perk_list, "EXTRA_PERK"))
-    end
-
-
-    if GuiButton(ALIEN_gui, 185, 54, "Gimme chuggies", next_id()) then
-        local x, y = EntityGetTransform(get_players()[1])
-        local entity_id = EntityLoad("data/entities/items/pickup/potion.xml", x, y)
-        AddMaterialInventoryMaterial( entity_id, "mat_magic_liquid_random_polymorph", 1000 ) -- bad
-    end
-
     local current_level = GetPlayerLevel();
     if (current_level ~= prev_level) then
         prev_level = current_level

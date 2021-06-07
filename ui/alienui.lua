@@ -3,11 +3,8 @@ dofile_once("data/scripts/lib/utilities.lua")
 dofile_once("mods/ALIEN/scripts/alien_utils.lua")
 
 local ALIEN_gui = GuiCreate()
-local show_alien_UI = false
+local show_alien_UI = getAlienSetting("gui_expansion_default") == "yes"
 local togglerMenuString = "ALIEN"
-local use_alt_res = UseAlternateResolution()
-local use_inventory_gui = UseInventoryGui()
-local show_mode_swap_button = ShowModeSwapButton()
 
 local gui_z = -9000
 local tooltip_z = -100
@@ -17,14 +14,6 @@ local toggler = function(toggle)
         return "[-] "
     else
         return "[+] "
-    end
-end
-
-function GuiLayoutCoordinates()
-    if (not use_alt_res) then
-        return 27, 17
-    else
-        return 22, 14
     end
 end
 
@@ -86,14 +75,28 @@ local perkFrame = function()
         show_alien_UI = not show_alien_UI
     end
 
-    if show_mode_swap_button and GuiButton(ALIEN_gui, 280, 0, "Swap UI Mode", next_id()) then
-        use_inventory_gui = not use_inventory_gui
-    end
-
     if (not show_alien_UI) then
         do
             return false
         end
+    end
+
+    if GuiButton(ALIEN_gui, 185, 44, "Gimme nuggies", next_id()) then
+        local x, y = EntityGetTransform(get_players()[1])
+        for i=1,10 do
+            EntityLoad("data/entities/items/pickup/goldnugget_10000.xml", x, y)
+        end
+    end
+
+    if GuiButton(ALIEN_gui, 400, 44, "Gimme extra", next_id()) then
+        AddPerkToPlayer(get_perk_with_id(perk_list, "EXTRA_PERK"))
+    end
+
+
+    if GuiButton(ALIEN_gui, 185, 54, "Gimme chuggies", next_id()) then
+        local x, y = EntityGetTransform(get_players()[1])
+        local entity_id = EntityLoad("data/entities/items/pickup/potion.xml", x, y)
+        AddMaterialInventoryMaterial( entity_id, "mat_magic_liquid_random_polymorph", 1000 ) -- bad
     end
 
     local current_level = GetPlayerLevel();
@@ -104,9 +107,7 @@ local perkFrame = function()
     end
     local current_xp = math.min(GetPlayerXP(), level_up_cost);
 
-    local Gui_X, Gui_Y = GuiLayoutCoordinates(use_alt_res)
-
-    GuiLayoutBeginVertical(ALIEN_gui, Gui_X, Gui_Y)
+    GuiLayoutBeginVertical(ALIEN_gui, 185, 64, true)
     GuiText(ALIEN_gui, 0, 0, "XP : " .. current_xp .. " / " .. level_up_cost_str)
     GuiText(ALIEN_gui, 0, 0, "Level : " .. current_level)
     GuiLayoutEnd(ALIEN_gui)
@@ -126,14 +127,25 @@ local perkFrame = function()
                 local button_x = GetPerkButtonX()
                 local button_y = GetPerkButtonY(i)
                 local perk_name = GameTextGetTranslatedOrNot(perk_data.ui_name)
-                GuiImageButton(ALIEN_gui, next_id(), button_x, button_y, perk_name, perk_data.ui_icon)
+                GuiImageButton(ALIEN_gui, next_id(), button_x, button_y, "", perk_data.ui_icon)
                 local left_click,right_click,hover,x,y,width,height,draw_x,draw_y = GuiGetPreviousWidgetInfo(ALIEN_gui)
                 if left_click then
                     SelectPerk(i, perk_data)
                     refreshPerkList = true
                 elseif hover then
                     renderTooltip(x + width, y + height, perk_data)
+                else
+                    -- Do clickable text as well
+                    GuiButton(ALIEN_gui, next_id(), button_x + 16, button_y + 3, perk_name)
+                    local left_click,right_click,hover,x,y,width,height,draw_x,draw_y = GuiGetPreviousWidgetInfo(ALIEN_gui)
+                    if left_click then
+                        SelectPerk(i, perk_data)
+                        refreshPerkList = true
+                    elseif hover then
+                        renderTooltip(x + width, y + height, perk_data)
+                    end
                 end
+
             end
 
             local utility_x_offset = 480
@@ -189,17 +201,33 @@ local perkFrame = function()
     end
 end
 
+local gui_visibility = getAlienSetting("gui_visibility")
+if (gui_visibility == "inventory") then
+    ui_render_wait = function()
+        return (getPlayerEntity() == nil or not InventoryIsOpen())
+    end
+elseif (gui_visibility == "world") then
+    ui_render_wait = function()
+        return (getPlayerEntity() == nil or InventoryIsOpen())
+    end
+else -- always
+    ui_render_wait = function()
+        return (getPlayerEntity() == nil)
+    end
+end
+
 async_loop(function()
     if ALIEN_gui ~= nil then
         GuiStartFrame(ALIEN_gui)
     end
 
-    if getPlayerEntity() == nil or ALIEN_xor(InventoryIsOpen(), use_inventory_gui) then -- !XOR logic for gui preference + current state, write it out on paper..
+    if ui_render_wait() then
         wait(10)
         do
             return
         end
     end
+
 
     if perkFrame ~= nil then
         current_btn_id = start_btn_id

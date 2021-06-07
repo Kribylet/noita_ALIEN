@@ -37,6 +37,22 @@ function ArrayCount(array)
     return count
 end
 
+
+-- Mod settings stuff
+
+function getAlienSetting(setting_id)
+    return ModSettingGet("ALIEN." .. setting_id)
+end
+
+cached_settings = {}
+
+function getAlienSettingCache(setting_id)
+    if (cached_settings[setting_id] == nil) then
+        cached_settings[setting_id] = ModSettingGet("ALIEN." .. setting_id)
+    end
+    return cached_settings[setting_id]
+end
+
 -- Define ALIEN levelling utilities
 
 function GetPlayerLevel()
@@ -113,23 +129,41 @@ function GetLevelUpCostAt(level)
 
     local levelupCostComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent", GetLevelCostTag(level))
 
+    local xp_cost_scaling = tonumber(getAlienSetting("xp_cost_scaling"))
+
+    local levelXPCost = 0
+
     if (levelupCostComponent ~= nil) then
-        return ComponentGetValue2(levelupCostComponent, "value_int")
+        levelXPCost = ComponentGetValue2(levelupCostComponent, "value_int")
     else
         local maxBaseLevelComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent",
                                           "var_max_base_level")
-        local highLevelCostGrowthComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent",
-                                                 "var_high_level_cost_growth")
 
         levelupCostComponent = EntityGetFirstComponent(player_entity, "VariableStorageComponent",
                                    "var_max_base_level_cost")
-        local levelXPCost = ComponentGetValue2(levelupCostComponent, "value_int")
+        levelXPCost = ComponentGetValue2(levelupCostComponent, "value_int")
         local levelsAboveMaxBaseLevel = level - ComponentGetValue2(maxBaseLevelComponent, "value_int")
-        local costGrowth = ComponentGetValue2(highLevelCostGrowthComponent, "value_int")
 
-        levelXPCost = levelXPCost + levelsAboveMaxBaseLevel * costGrowth
-        return levelXPCost
+        local high_level_growth_mode = getAlienSetting("high_level_growth_mode")
+
+        if (high_level_growth_mode == "linear") then
+            local linear_level_cost_growth = tonumber(getAlienSetting("linear_level_cost_growth"))
+            if (linear_level_cost_growth == nil) then
+                linear_level_cost_growth = 1000
+            end
+            levelXPCost = levelXPCost + levelsAboveMaxBaseLevel * linear_level_cost_growth
+        elseif (high_level_growth_mode == "doubles") then
+            for i=1, levelsAboveMaxBaseLevel do
+                levelXPCost = levelXPCost * 2
+            end
+        elseif (high_level_growth_mode == "triples") then
+            for i=1, levelsAboveMaxBaseLevel do
+                levelXPCost = levelXPCost * 3
+            end
+        end
     end
+
+    return levelXPCost * xp_cost_scaling
 end
 
 function RemoveStoredLevelUpCost(level)
@@ -208,29 +242,29 @@ function sentence_split(inputstr, max_line_length, sep)
 end
 
 
-function UseInventoryGui()
-    local config_entity = EntityLoad("mods/ALIEN/ui/gui_mode.xml")
+--function UseInventoryGui()
+--    local config_entity = EntityLoad("mods/ALIEN/ui/gui_mode.xml")
+--
+--    local guiModeComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "alienuseinventorygui")
+--
+--    local value = ComponentGetValue2(guiModeComponent, "value_int")
+--
+--    EntityKill(config_entity)
+--
+--    return value ~= 0
+--end
 
-    local guiModeComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "alienuseinventorygui")
-
-    local value = ComponentGetValue2(guiModeComponent, "value_int")
-
-    EntityKill(config_entity)
-
-    return value ~= 0
-end
-
-function ShowModeSwapButton()
-    local config_entity = EntityLoad("mods/ALIEN/ui/gui_mode.xml")
-
-    modeSwapButtonComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "showmodeswapbutton")
-
-    local value = ComponentGetValue2(modeSwapButtonComponent, "value_int")
-
-    EntityKill(config_entity)
-
-    return value ~= 0
-end
+--function ShowModeSwapButton()
+--    local config_entity = EntityLoad("mods/ALIEN/ui/gui_mode.xml")
+--
+--    modeSwapButtonComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "showmodeswapbutton")
+--
+--    local value = ComponentGetValue2(modeSwapButtonComponent, "value_int")
+--
+--    EntityKill(config_entity)
+--
+--    return value ~= 0
+--end
 
 function ALIEN_xor(a, b)
     if a ~= b then return true else return false end
@@ -239,24 +273,6 @@ end
 local perk_button_x_anchor = 300
 local perk_button_y_anchor = 44
 local perk_button_y_walk = 16
-
-local perk_icon_offset_multiplier = 2
-
-function UseAlternateResolution()
-    local config_entity = EntityLoad("mods/ALIEN/ui/resolution.xml")
-
-    local alternateResComponent = EntityGetFirstComponent(config_entity, "VariableStorageComponent", "alienalternateresolution")
-
-    local value = ComponentGetValue2(alternateResComponent, "value_int")
-
-    EntityKill(config_entity)
-
-    return value ~= 0
-end
-
-if (UseAlternateResolution()) then
-    perk_icon_offset_multiplier = 1.59
-end
 
 function GetPerkButtonX()
     return perk_button_x_anchor
@@ -333,8 +349,6 @@ function RemoveAllAvailablePerks()
             EntityRemoveComponent(player_entity, comp)
         end
     end
-
-    RemovePerkRerollCost()
 
     return true
 end
@@ -751,45 +765,129 @@ function GetPerkDataById(perk_id)
 end
 
 function AddPerkToPlayer(perk_data)
+	-- fetch perk info ---------------------------------------------------
 
-    local player_entity = get_players()[1]
+    local player_entity = getPlayerEntity()
+    local pos_x, pos_y = EntityGetTransform( player_entity )
 
-    local perk_name = perk_data.ui_name
-    local perk_desc = perk_data.ui_description
+	local perk_id = perk_data.id
 
-    -- load perk for entity_who_picked -----------------------------------
+	-- Get perk's flag name
 
-    local flag_name = get_perk_picked_flag_name(perk_data.id)
-    GameAddFlagRun(flag_name)
-    AddFlagPersistent(string.lower(flag_name))
+	local flag_name = get_perk_picked_flag_name( perk_id )
 
-    -- add game effect
-    if perk_data.game_effect ~= nil then
-        local game_effect_comp = GetGameEffectLoadTo(player_entity, perk_data.game_effect, true)
-        if game_effect_comp ~= nil then
-            ComponentSetValue(game_effect_comp, "frames", "-1")
-        end
+	-- update how many times the perk has been picked up this run -----------------
+
+	local pickup_count = tonumber( GlobalsGetValue( flag_name .. "_PICKUP_COUNT", "0" ) )
+	pickup_count = pickup_count + 1
+	GlobalsSetValue( flag_name .. "_PICKUP_COUNT", tostring( pickup_count ) )
+
+	-- load perk for player_entity -----------------------------------
+	local add_progress_flags = not GameHasFlagRun( "no_progress_flags_perk" )
+
+	if add_progress_flags then
+		local flag_name_persistent = string.lower( flag_name )
+		if ( not HasFlagPersistent( flag_name_persistent ) ) then
+			GameAddFlagRun( "new_" .. flag_name_persistent )
+		end
+		AddFlagPersistent( flag_name_persistent )
+	end
+	GameAddFlagRun( flag_name )
+
+	local no_remove = perk_data.do_not_remove or false
+
+	-- add a game effect or two
+	if perk_data.game_effect ~= nil then
+		local game_effect_comp,game_effect_entity = GetGameEffectLoadTo( player_entity, perk_data.game_effect, true )
+		if game_effect_comp ~= nil then
+			ComponentSetValue( game_effect_comp, "frames", "-1" )
+
+			if ( no_remove == false ) then
+				ComponentAddTag( game_effect_comp, "perk_component" )
+				EntityAddTag( game_effect_entity, "perk_entity" )
+			end
+		end
+	end
+
+	if perk_data.game_effect2 ~= nil then
+		local game_effect_comp,game_effect_entity = GetGameEffectLoadTo( player_entity, perk_data.game_effect2, true )
+		if game_effect_comp ~= nil then
+			ComponentSetValue( game_effect_comp, "frames", "-1" )
+
+			if ( no_remove == false ) then
+				ComponentAddTag( game_effect_comp, "perk_component" )
+				EntityAddTag( game_effect_entity, "perk_entity" )
+			end
+		end
+	end
+
+	-- particle effect only applied once
+	if perk_data.particle_effect ~= nil and ( pickup_count <= 1 ) then
+		local particle_id = EntityLoad( "data/entities/particles/perks/" .. perk_data.particle_effect .. ".xml" )
+
+		if ( no_remove == false ) then
+			EntityAddTag( particle_id, "perk_entity" )
+		end
+
+		EntityAddChild( player_entity, particle_id )
+	end
+
+	-- certain other perks may be marked as picked-up
+	if perk_data.remove_other_perks ~= nil then
+		for i,v in ipairs( perk_data.remove_other_perks ) do
+			local f = get_perk_picked_flag_name( v )
+			GameAddFlagRun( f )
+		end
+	end
+
+	if perk_data.func ~= nil then
+        -- Spawn a dummy perk item for use in the perk function
+        perk_entity_id = perk_spawn( pos_x + Random(-1, 1), pos_y, perk_id, true)
+
+		perk_data.func( perk_entity_id, player_entity, perk_data.ui_name, pickup_count )
+
+        EntityKill(perk_entity_id)
+	end
+
+	local perk_name = GameTextGetTranslatedOrNot( perk_data.ui_name )
+	local perk_desc = GameTextGetTranslatedOrNot( perk_data.ui_description )
+
+	-- add ui icon etc
+	local entity_ui = EntityCreateNew( "" )
+	EntityAddComponent( entity_ui, "UIIconComponent",
+	{
+		name = perk_data.ui_name,
+		description = perk_data.ui_description,
+		icon_sprite_file = perk_data.ui_icon
+	})
+
+	if ( no_remove == false ) then
+		EntityAddTag( entity_ui, "perk_entity" )
+	end
+
+	EntityAddChild( player_entity, entity_ui )
+
+	-- cosmetic fx -------------------------------------------------------
+    local enemies_killed = tonumber( StatsBiomeGetValue("enemies_killed") )
+
+    if( enemies_killed ~= 0 ) then
+        EntityLoad( "data/entities/particles/image_emitters/perk_effect.xml", pos_x, pos_y )
+    else
+        EntityLoad( "data/entities/particles/image_emitters/perk_effect_pacifist.xml", pos_x, pos_y )
     end
 
-    if perk_data.func ~= nil then
-        perk_data.func("entity_item_DUMMY_NEVER_USED", player_entity, "item_name_DUMMY_NEVER_USED")
-    end
-
-    -- add ui icon etc
-    local entity_ui = EntityCreateNew("")
-    EntityAddComponent(entity_ui, "UIIconComponent", {
-        name = perk_data.ui_name,
-        description = perk_data.ui_description,
-        icon_sprite_file = perk_data.ui_icon
-    })
-    EntityAddChild(player_entity, entity_ui)
-
-    GamePrintImportant(GameTextGet("$log_pickedup_perk", GameTextGetTranslatedOrNot(perk_name)), perk_desc)
+    GamePrintImportant( GameTextGet( "$log_pickedup_perk", perk_name), perk_desc )
 end
 
--- Utility from perk.lua
-local get_perk_flag_name = function(perk_id)
-    return "PERK_" .. perk_id
+local function shuffle_table( t )
+	assert( t, "shuffle_table() expected a table, got nil" )
+	local iterations = #t
+	local j
+
+	for i = iterations, 2, -1 do
+		j = Random(1,i)
+		t[i], t[j] = t[j], t[i]
+	end
 end
 
 -- this generates global perk spawn order for current world seed
@@ -800,74 +898,118 @@ end
 -- during perk selection, because the original perk selection method relied on resetting the seed
 -- again based on the unique x,y positions of the perk entities, which can't be done for ALIEN
 local fixed_perk_get_spawn_order = function()
-    -- this function should return the same results no matter when or where during a run it is called.
-    -- this function should have no side effects.
-    local MIN_DISTANCE_BETWEEN_DUPLICATE_PERKS = 4
-    local PERK_SPAWN_ORDER_LENGTH = 100
-    local PERK_DUPLICATE_AVOIDANCE_TRIES = 200
+	-- this function should return the same list in the same order no matter when or where during a run it is called.
+	-- the expection is that some of the elements in the list can be set to "" to indicate that they're used
 
-    local create_perk_pool = function()
-        local result = {}
+	-- 1) Create a Deck from all the perks, add multiple of stackable
+	-- 2) Shuffle the Deck
+	-- 3) Remove duplicate perks that are too close to each other
 
-        for i, perk_data in ipairs(perk_list) do
-            if (perk_data.not_in_default_perk_pool == nil or perk_data.not_in_default_perk_pool == false) then
-                table.insert(result, perk_data)
-            end
-        end
+	-- NON DETERMISTIC THINGS ARE ALLOWED TO HAPPEN
+	-- 4) Go through the perk list and "" the perks we've picked up
 
-        return result
-    end
+	local ignore_these = ignore_these_ or {}
 
-    local perk_pool = create_perk_pool()
+	local MIN_DISTANCE_BETWEEN_DUPLICATE_PERKS = 4
+	local DEFAULT_MAX_STACKABLE_PERK_COUNT = 128
 
-    local result = {}
+	--SetRandomSeed( 1, 2 )
 
-    for i = 1, PERK_SPAWN_ORDER_LENGTH do
-        local tries = 0
-        local perk_data = nil
+	-- 1) Create a Deck from all the perks, add multiple of stackable
+	-- create the perk pool
+	-- local perk_pool = {}
+	local perk_deck = {}
+	local stackable_distances = {}
+	local stackable_count = {}			-- -1 = NON_STACKABLE otherwise the result is how many times can be stacked
 
-        while tries < PERK_DUPLICATE_AVOIDANCE_TRIES do
-            local ok = true
-            if #perk_pool == 0 then
-                perk_pool = create_perk_pool()
-            end
+	-- function create_perk_pool
+	for i,perk_data in ipairs(perk_list) do
+		if ( ( table_contains( ignore_these, perk_data.id ) == false ) and ( perk_data.not_in_default_perk_pool == nil or perk_data.not_in_default_perk_pool == false ) ) then
+			local perk_name = perk_data.id
+			local how_many_times = 1
+			stackable_distances[ perk_name ] = -1
+			stackable_count[ perk_name ] = -1
 
-            local index_in_perk_pool = Random(1, #perk_pool)
-            perk_data = perk_pool[index_in_perk_pool]
+			if( ( perk_data.stackable ~= nil ) and ( perk_data.stackable == true ) ) then
+				local max_perks = Random( 1, 2 )
+				-- TODO( Petri ): We need a new variable that indicates how many times they can appear in the pool
+				if( perk_data.max_in_perk_pool ~= nil ) then
+					max_perks = Random( 1, perk_data.max_in_perk_pool )
+				end
 
-            if perk_is_stackable(perk_data) then --  ensure stackable perks are not spawned too close to each other
-                for ri = #result - MIN_DISTANCE_BETWEEN_DUPLICATE_PERKS, #result do
-                    if ri >= 1 and result[ri] == perk_data.id then
-                        ok = false
-                        break
-                    end
-                end
-            else
-                table.remove(perk_pool, index_in_perk_pool) -- remove non-stackable perks from the pool
-            end
+				if( perk_data.stackable_maximum ~= nil ) then
+					stackable_count[ perk_name ] = perk_data.stackable_maximum
+				else
+					stackable_count[ perk_name ] = DEFAULT_MAX_STACKABLE_PERK_COUNT
+				end
 
-            if ok then
-                break
-            end
+				if( ( perk_data.stackable_is_rare ~= nil ) and ( perk_data.stackable_is_rare == true ) ) then
+					max_perks = 1
+				end
 
-            tries = tries + 1
-        end
+				stackable_distances[ perk_name ] = perk_data.stackable_how_often_reappears or MIN_DISTANCE_BETWEEN_DUPLICATE_PERKS
 
-        table.insert(result, perk_data.id)
-    end
+				how_many_times = Random( 1, max_perks )
+			end
 
-    -- shift the results a x number forward
-    local new_start_i = Random(10, 20)
-    local real_result = {}
-    for i = 1, PERK_SPAWN_ORDER_LENGTH do
-        real_result[i] = result[new_start_i]
-        new_start_i = new_start_i + 1
-        if (new_start_i > #result) then
-            new_start_i = 1
-        end
-    end
+			for j=1,how_many_times do
+				table.insert( perk_deck, perk_name )
+			end
+		end
+	end
 
-    return real_result
+	-- 2) Shuffle the Deck
+	shuffle_table( perk_deck )
+
+	-- 3) Remove duplicate perks that are too close to each other
+	-- we need to do this in reverse, since otherwise table.remove might cause the iterator to bug out
+	for i=#perk_deck,1,-1 do
+
+		local perk = perk_deck[i]
+		if( stackable_distances[ perk ] ~= -1 ) then
+
+			local min_distance = stackable_distances[ perk ]
+			local remove_me = false
+
+			--  ensure stackable perks are not spawned too close to each other
+			for ri=i-min_distance,i-1 do
+				if ri >= 1 and perk_deck[ri] == perk then
+					remove_me = true
+					break
+				end
+			end
+
+			if( remove_me ) then table.remove( perk_deck, i ) end
+		end
+	end
+
+	-- NON DETERMINISTIC THINGS ARE ALLOWED TO HAPPEN
+	-- 4) Go through the perk list and "" the perks we've picked up
+	-- remove non-stackable perks already collected from the list
+	for i,perk_name in pairs( perk_deck ) do
+		local flag_name = get_perk_picked_flag_name( perk_name )
+		local pickup_count = tonumber( GlobalsGetValue( flag_name .. "_PICKUP_COUNT", "0" ) )
+
+		-- GameHasFlagRun( flag_name ) - this is if its ever been spawned
+		-- has been picked up
+		if( ( pickup_count > 0 ) ) then
+			local stack_count = stackable_count[ perk_name ] or -1
+			-- print( perk_name .. ": " .. tostring( stack_count ) )
+			if( ( stack_count == -1 ) or ( pickup_count >= stack_count ) ) then
+                GamePrint(GameTextGetTranslatedOrNot( GetPerkDataById(perk_deck[i]).ui_name ) .. " was purged, picked " .. pickup_count .. " times this run")
+				perk_deck[i] = ""
+			end
+		end
+	end
+
+	-- DEBUG
+	if( false ) then
+		for i,perk in ipairs(perk_deck) do
+			print(  tostring( i ) .. ": " .. perk )
+		end
+	end
+
+	return perk_deck
 end
 
 function GeneratePerkList(perk_count)
@@ -876,19 +1018,28 @@ function GeneratePerkList(perk_count)
 
     local perks = fixed_perk_get_spawn_order()
 
+	local next_perk_index = tonumber( GlobalsGetValue( "TEMPLE_NEXT_PERK_INDEX", "1" ) )
+	local perk_id = perks[next_perk_index]
+
     for i = 1, perk_count do
-        local next_perk_index = tonumber(GlobalsGetValue("TEMPLE_NEXT_PERK_INDEX", "1"))
-        local perk_id = perks[next_perk_index]
+        while( perk_id == nil or perk_id == "" ) do
+            -- if we over flow
+            perks[next_perk_index] = "LEGGY_FEET"
+            next_perk_index = next_perk_index + 1
+            if next_perk_index > #perks then
+                next_perk_index = 1
+            end
+            perk_id = perks[next_perk_index]
+	    end
 
         next_perk_index = next_perk_index + 1
         if next_perk_index > #perks then
             next_perk_index = 1
         end
-        GlobalsSetValue("TEMPLE_NEXT_PERK_INDEX", tostring(next_perk_index))
-
-        GameAddFlagRun(get_perk_flag_name(perk_id))
+        GlobalsSetValue( "TEMPLE_NEXT_PERK_INDEX", tostring(next_perk_index) )
 
         StoreAvailablePerkID(perk_id)
+        perk_id = perks[next_perk_index]
     end
 
     StorePerkRerollCost()
@@ -902,17 +1053,15 @@ local doPerformLevelUp = function()
     local perk_count = tonumber(GlobalsGetValue("TEMPLE_PERK_COUNT", "3"))
     GeneratePerkList(perk_count)
 
-    local player_level = GetPlayerLevel()
-
-    player_level = player_level + 1
+    local old_player_level = GetPlayerLevel()
 
     SetPlayerXP(GetPlayerXP() - GetLevelUpCost())
 
-    SetPlayerLevel(player_level)
+    SetPlayerLevel(old_player_level + 1)
 
-    RemoveStoredLevelUpCost(player_level - 1) -- Clean up unused VariableStorageComponent to reduce tag usage
+    RemoveStoredLevelUpCost(old_player_level) -- Clean up unused VariableStorageComponent to reduce tag usage
 
-    return player_level
+    return old_player_level + 1
 end
 
 function RenderLevelUpAnimation()
@@ -938,7 +1087,7 @@ local doTabletLevelUp = function()
     local current_level = GetPlayerLevel()
 
     local nextLevelUpCost = GetLevelUpCostAt(current_level) + GetLevelUpCostAt(current_level + 1)
-    SetLevelUpCost(current_level + 1, nextLevelUpCost)
+    SetLevelUpCost(current_level + 1, nextLevelUpCost / tonumber(getAlienSetting("xp_cost_scaling")))
     SetLevelUpCost(current_level, 0)
 
     if (PlayerShouldLevelUp()) then
@@ -950,8 +1099,10 @@ function PerformDivineTabletEffect()
 
     local timesVisitedTemple = GetTimesVisitedTemple()
 
+    local temple_gives_level = getAlienSetting("temple_gives_level")
+
     timesVisitedTemple = timesVisitedTemple + 1
-    if (GetPlayerLevel() < (timesVisitedTemple + 1)) then
+    if (temple_gives_level == "always" or (temple_gives_level == "if_behind" and GetPlayerLevel() < (timesVisitedTemple + 1))) then
         GamePrintImportant("Divine Tablet", "The gods grant you power above wisdom.")
         doTabletLevelUp()
     else
@@ -1046,6 +1197,10 @@ local performPerkRemoval = function(index)
             RemoveAvailablePerkID(index)
         end
     end
+
+    if (GetAvailablePerkNum() == 0) then
+        RemovePerkRerollCost()
+    end
 end
 
 function SelectPerk(index, perk_data)
@@ -1095,6 +1250,7 @@ function RerollPerkList()
     GlobalsSetValue("TEMPLE_PERK_REROLL_COUNT", tostring(perk_reroll_count))
 
     RemoveAllAvailablePerks()
+    RemovePerkRerollCost()
     GeneratePerkList(available_perks)
 end
 

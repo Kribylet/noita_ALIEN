@@ -16,7 +16,6 @@ function OnPlayerSpawned(player_entity) -- This runs when player entity has been
         })
 
         local level_up_costs = {400, 800, 1200, 1600, 2200, 3000, 4000}
-        local high_level_cost_growth = 1000
 
         for i = 1, (#level_up_costs - 1) do
             EntityAddComponent(player_entity, "VariableStorageComponent", {
@@ -33,11 +32,6 @@ function OnPlayerSpawned(player_entity) -- This runs when player entity has been
         EntityAddComponent(player_entity, "VariableStorageComponent", {
             _tags = "var_max_base_level_cost",
             value_int = level_up_costs[#level_up_costs]
-        })
-
-        EntityAddComponent(player_entity, "VariableStorageComponent", {
-            _tags = "var_high_level_cost_growth",
-            value_int = high_level_cost_growth
         })
 
         EntityAddComponent(player_entity, "VariableStorageComponent", {
@@ -58,12 +52,12 @@ if (ShouldRemovePerkRerollItem) then
     ModLuaFileAppend("data/scripts/biomes/boss_arena.lua", "mods/ALIEN/game/boss_arena.lua")
 end
 
-function OnPausedChanged(is_paused, is_inventory_pause)
-    local entity_ids = EntityGetWithTag("ALIEN_PERK_TAG")
-
-    for i, entity_id in pairs(entity_ids) do
-        local sprite_component = EntityGetFirstComponentIncludingDisabled(entity_id, "SpriteComponent")
-        EntitySetComponentIsEnabled(entity_id, sprite_component, not is_paused)
-        EntityRefreshSprite(entity_id, sprite_component)
-    end
-end
+--function OnPausedChanged(is_paused, is_inventory_pause)
+--    local entity_ids = EntityGetWithTag("ALIEN_PERK_TAG")
+--
+--    for i, entity_id in pairs(entity_ids) do
+--        local sprite_component = EntityGetFirstComponentIncludingDisabled(entity_id, "SpriteComponent")
+--        EntitySetComponentIsEnabled(entity_id, sprite_component, not is_paused)
+--        EntityRefreshSprite(entity_id, sprite_component)
+--    end
+--end

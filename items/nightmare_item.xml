@@ -39,7 +39,7 @@
   
 
   <ParticleEmitterComponent 
-		emitted_material_name="spark_yellow"
+		emitted_material_name="spark_red"
 		gravity.y="0.0"
 		lifetime_min="4"
 		lifetime_max="8"

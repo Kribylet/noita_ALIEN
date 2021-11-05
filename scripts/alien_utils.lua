@@ -1054,6 +1054,16 @@ function RenderLevelUpAnimation()
     EntityLoad("mods/ALIEN/image_emitters/level_up_effect.xml", x, y)
 end
 
+
+function RenderNightmareAnimation()
+
+    local player_entity = get_players()[1]
+
+    local x,y = EntityGetTransform(player_entity)
+
+    EntityLoad("mods/ALIEN/image_emitters/nightmare_effect.xml", x, y)
+end
+
 function PerformLevelUp()
 
     local player_level = doPerformLevelUp()
@@ -1107,6 +1117,7 @@ function PerformNightmareTabletEffect()
     GamePrintImportant("The Shattered God", "Bring me vengeance.")
     local perk_count = tonumber(GlobalsGetValue("TEMPLE_PERK_COUNT", "3"))
     GeneratePerkList(perk_count, {"EDIT_WANDS_EVERYWHERE"})
+    RenderNightmareAnimation()
 end
 
 function GetAvailablePerkIDs()
